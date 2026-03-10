@@ -78,7 +78,9 @@ swjtuThesis模板的信息录入主要包括\textbf{学位论文基本信息}以
 需要注意的是，并非所有的插图都适合采用矢量格式，尤其是照片之类的图片，通常情况下适宜采用.png或者.jpeg等位图格式；\textbf{而系统框图、曲线图、概念流程图等，则以采用矢量图格式为佳。}
 
 \par
-目前，主流的商业矢量插画绘制软件以ADOBE公司的Illustrator以及Corel公司的CorelDRAW为主，不过受制于其售价，一般学生用户可以使用一些免费的矢量图编辑软件，例如Inkscape\footnote{Inkscape官方网站：\url{https://inkscape.org/en/}}，作为一款矢量图绘制的利器，其功能已经能够基本满足正常的需，深受广大用户的喜爱。
+目前，主流的商业矢量插画绘制软件以ADOBE公司的Illustrator以及Corel公司的CorelDRAW为主，不过受制于其售价，
+一般学生用户可以使用一些免费的矢量图编辑软件，例如Inkscape\footnote{Inkscape官方网站：\url{https://inkscape.org/en/}}，
+作为一款矢量图绘制的利器，其功能已经能够基本满足正常的需，深受广大用户的喜爱。
 
 \begin{figure}[htbp]
 	\centering
@@ -86,14 +88,12 @@ swjtuThesis模板的信息录入主要包括\textbf{学位论文基本信息}以
 	\caption{西南交通大学校徽位图格式(.png)}
 	\label{SWJTU_LOGO_PNG}
 \end{figure}
-
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=3in]{figures/SWJTU_LOGO.pdf}
 	\caption{西南交通大学校徽矢量格式(.pdf)}
 	\label{SWJTU_LOGO_PDF}
 \end{figure}
-
 
 
 \section{参考文献}
@@ -152,4 +152,9 @@ swjtuThesis模板的信息录入主要包括\textbf{学位论文基本信息}以
 依次执行XeLaTeX，BibTeX，XeLaTeX，XeLaTeX四次编译即可生成最终的学位论文.pdf文件。
 
 \par
-其中第一次的~\XeLaTeX{}~编译是为了生成学位论文的主体框架；第二次的~\BibTeX{}~编译实现参考文献的获取和加载，如果在此之后没有再修改过参考文献库信息(比如增添和删除等操作)，可以不再需要执行~\BibTeX{}~编译；最后两次的~\XeLaTeX{}~编译用以获取最终的论文.pdf文档。由于本模板的目录由\verb|\tableofcontents|命令生成，需要进行两次~\LaTeX~编译才能够正常显示，\textbf{因此如果修改了章节标题等信息，在第一次的~\XeLaTeX{}~编译过后在目录处并不会马上更新，需要执行完成第二次编译才会在目录处进行更新。}
+其中第一次的~\XeLaTeX{}~编译是为了生成学位论文的主体框架；
+第二次的~\BibTeX{}~编译实现参考文献的获取和加载，
+如果在此之后没有再修改过参考文献库信息(比如增添和删除等操作)，可以不再需要执行~\BibTeX{}~编译；
+最后两次的~\XeLaTeX{}~编译用以获取最终的论文.pdf文档。由于本模板的目录由\verb|\tableofcontents|命令生成，
+需要进行两次~\LaTeX~编译才能够正常显示，
+\textbf{因此如果修改了章节标题等信息，在第一次的~\XeLaTeX{}~编译过后在目录处并不会马上更新，需要执行完成第二次编译才会在目录处进行更新。}

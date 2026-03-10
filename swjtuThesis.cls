@@ -141,8 +141,8 @@
   \vspace{1pt}
 }
 
-\captionsetup[figure]{format=figformat, aboveskip=12pt, belowskip=6pt, labelformat=simple, labelsep=quad, font={tiny, stretch=1.35}}
-\captionsetup[table]{format=figformat, aboveskip=6pt, belowskip=12pt, labelformat=simple, labelsep=quad, font={tiny, stretch=1.35}}
+\captionsetup[figure]{position=bottom, aboveskip=6pt, belowskip=-6pt, labelformat=simple, labelsep=quad, font={tiny, stretch=1.35}}
+\captionsetup[table]{position=top, aboveskip=6pt, belowskip=12pt, labelformat=simple, labelsep=quad, font={tiny, stretch=1.35}}
 
 %-------------------------------------------------------------------------------
 %                论文信息（题目、作者、导师、专业、图书信息等）
