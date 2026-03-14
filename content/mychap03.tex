@@ -209,103 +209,210 @@ F_k = \mathop{\text{Top-}k}_{f_i \in F_{\text{cand}}} \left\{ \text{Sim}_{\text{
 % todo
 \section{基于逻辑增强的模式链接}
 
-模式链接是Text-to-SQL任务中的关键环节，其目标是将用户的自然语言查询与数据库模式中的元素（包括表、列和值）相关联，从庞大的数据库模式中筛选出最小必要且包含丰富语义信息的数据库子模式\cite{pourreza2024chase}。本节提出一种基于逻辑增强的模式链接方法，通过动态检索元素信息、选取关键模式片段并注入领域逻辑信息，将原始数据库模式$S$转化为面向特定问题$Q$的最小增强模式$S^{*}$。
+模式链接是Text-to-SQL任务中的关键环节，其目标是将用户的自然语言查询与数据库模式中的元素（包括表、列和值）相关联，
+从庞大的数据库模式中筛选出最小必要且包含丰富语义信息的数据库子模式\cite{pourreza2024chase}。
+本节提出一种基于逻辑增强的模式链接方法，通过动态检索元素信息、选取关键模式片段并注入领域逻辑信息，将原始数据库模式$S$转化为面向特定问题$Q$的最小增强模式$S^{*}$。
 
 该方法的处理流程包含检索、筛选和增强三个阶段，其完整算法描述如算法\ref{alg:schema_linking}所示。
 
 \begin{algorithm}[htbp]
-\KwIn{用户查询$Q$，原始数据库模式$S$，动态样例$F = \{f_1, f_2, \ldots, f_{n_f}\}$，领域知识库$K = \{B, L, V\}$，向量数据库$\text{VecDB}$，大语言模型$\text{LLM}$}
+\KwIn{用户查询$Q$，原始数据库模式$S$，动态样例$F_u = \{f_1, f_2, \ldots, f_{n_f}\}$，领域知识库$K = \{B, L, V\}$，向量数据库$\text{VecDB}$，大语言模型$\text{LLM}$}
 \KwOut{最小增强模式$S^{*}$}
-初始化候选模式片段集合$S_{\text{cand}} \leftarrow \emptyset$\;
-$W_{\text{entity}} \leftarrow \text{LLM}(Q, F)$\tcp*{实体提取}
-$C_{\text{alias}}, C_{\text{virtual}}, D_{\text{prompt}} \leftarrow \text{GetKnowledge}(W_{\text{entity}}, B, L, V)$\;
-$S_{\text{cand}} \leftarrow S_{\text{cand}} \cup \{C_{\text{alias}}, C_{\text{virtual}}, D_{\text{prompt}}\}$\;
+初始化：候选模式片段集合$S_{\text{cand}} \leftarrow \emptyset$\;
+\tcp{阶段一：检索}
+$W_{\text{entity}} \leftarrow \text{LLM}(Q, F_u, K)$\tcp*{实体提取}
 \ForEach{$w \in W_{\text{entity}}$}{
   $C_{\text{topk}} \leftarrow \text{SemanticSearch}(w, C, k)$\tcp*{列检索}
-  $\text{val} \leftarrow \arg\max_{v \in \text{LSH}(w, \text{VecDB})} \text{Sim}(\text{Enc}(w), \text{Enc}(v))$\tcp*{值检索}
+  $V_{\text{lsh}} \leftarrow \text{LSH}(w, \text{VecDB})$\tcp*{值粗召回}
+  $\text{val} \leftarrow \arg\max_{v \in V_{\text{lsh}}} \text{Sim}(\text{Enc}(w), \text{Enc}(v))$\tcp*{语义精排}
   $S_{\text{cand}} \leftarrow S_{\text{cand}} \cup \{C_{\text{topk}}, \text{val}, \text{Table}(\text{val})\}$\;
 }
+\tcp{阶段二：筛选}
 $S_{\text{filter}} \leftarrow \text{LLM}(Q, S_{\text{cand}})$\tcp*{列相关性评估与筛选}
-$S^{*} \leftarrow \text{TransLASchema}(S_{\text{filter}})$\tcp*{转换为LA-Schema格式}
+\tcp{阶段三：增强}
+$C_{\text{alias}}, C_{\text{virtual}}, D_{\text{prompt}} \leftarrow \text{GetKnowledge}(W_{\text{entity}}, B, L, V)$\;
+$S^{*} \leftarrow \text{TransLASchema}(S_{\text{filter}}, C_{\text{alias}}, C_{\text{virtual}}, D_{\text{prompt}})$\tcp*{注入知识并转换为LA-Schema}
 \Return{$S^{*}$}
 \caption{基于逻辑增强的模式链接算法}
 \label{alg:schema_linking}
 \end{algorithm}
 
-\textbf{检索阶段}旨在从数据库中搜索与查询潜在关联的值和列。该阶段首先利用大语言模型识别用户问题中的关键词与实体，同时使用预处理阶段检索到的$n_f$个动态示例以及关联知识库信息$K$引导LLM执行知识抽取，获取实体集合$W_{\text{entity}}$。列检索基于关键词与列描述之间的语义相似度，筛选每个关键词对应的$\text{Top-}k$候选列。值检索采用向量数据库中基于LSH和语义相似度的两阶段检索策略：先通过LSH快速召回粗粒度候选集，再利用嵌入向量的余弦相似度进行精排，以实现对目标值及其所属列的精准定位。
+\textbf{检索阶段}旨在从数据库中搜索与查询潜在关联的值和列。该阶段首先以用户查询$Q$、动态样例$F_u$及领域知识库$K$为输入，利用大语言模型识别用户问题中的关键词与实体，获取实体集合$W_{\text{entity}}$。随后，对$W_{\text{entity}}$中的每个实体$w$分别执行列检索与值检索。列检索基于实体$w$与列描述之间的语义相似度，筛选每个实体对应的$\text{Top-}k$候选列。值检索采用基于LSH和语义相似度的两阶段策略：先通过LSH从向量数据库中快速召回粗粒度候选集$V_{\text{lsh}}$，再利用嵌入向量的余弦相似度在$V_{\text{lsh}}$中精排，以实现对目标值及其所属列的精准定位。检索到的候选列、匹配值及其所属表共同构成候选模式片段集合$S_{\text{cand}}$。
 
 \textbf{筛选阶段}旨在将检索得到的表、列、值集合缩减为生成SQL所需的最小数据库模式。此过程根据检索得到的候选列元素集合，让大语言模型评估每个列与用户查询的相关性，过滤无关列，最终得到最小数据库模式$S_{\text{filter}}$。该筛选步骤能够有效降低后续生成阶段的输入规模，减少因冗余信息导致的模型注意力分散和幻觉问题。
 
 \textbf{增强阶段}是本方法的核心创新所在。在获得最小数据库模式后，系统从领域知识库$K$中提取与当前查询相关的业务知识，并将其显式注入模式表示中，形成逻辑增强模式LA-Schema。LA-Schema的组织方式参照M-Schema\cite{gao2024xiyan}的半结构化格式，以层次化的方式展示数据库、表和列之间的结构关系，并在此基础上添加政务领域业务知识的显式表达。具体的增强内容包括三个层面：
 
-（1）\textbf{术语归一与别名扩展}：对于知识库$B$中与当前查询匹配的业务术语映射，在对应字段上添加\texttt{Business Term}标记，标注该字段在业务语义上的对应关系。例如，当字段\texttt{ybggyssrje}被识别为"一般公共预算收入"的物理存储字段时，LA-Schema中会以\texttt{[Business Term: 一般公共预算收入 $\rightarrow$ ybggyssrje]}的形式进行标注。
 
-（2）\textbf{虚拟逻辑列注入}：对于知识库$L$中匹配的计算指标，在LA-Schema中创建虚拟列（Virtual Column），并附带预定义的SQL计算公式。例如，对于"同比增长率"指标，系统会注入一个标记为\texttt{[Virtual Column: 同比增长率, Formula: (当期值 - 上期值) / 上期值 * 100]}的虚拟字段。这样，大语言模型在生成SQL时可以直接引用预定义的计算逻辑，而无需从零开始推理复杂的业务公式。
+（1）\textbf{术语归一与别名扩展}：对于知识库$B$中与当前查询匹配的业务术语映射，
+在对应字段上添加\texttt{Business Term}标记，标注该字段在业务语义上的对应关系。
+例如，当字段\texttt{ybsr}被识别为“一般公共预算收入”的物理存储字段时，
+LA-Schema中会以\texttt{[Business Term: 一般公共预算收入 $\rightarrow$ ybsr]}的形式进行标注。
 
-（3）\textbf{列值提示与约束}：对于知识库$V$中匹配的值域约束以及通过值检索获得的匹配值，在对应列上添加\texttt{Value Term}标记，提示模型在WHERE条件中使用正确的匹配值。
+（2）\textbf{虚拟逻辑列注入}：对于知识库$L$中匹配的计算指标，在LA-Schema中创建虚拟列（Virtual columns），
+并附带预定义的SQL计算公式。例如，对于“同比增长率”指标，
+系统会注入一个标记为\texttt{[Logical Term: 同比增长率, Formula: (当期值 - 上期值) / 上期值 * 100]}的虚拟字段。
+这样，大语言模型在生成SQL时可以直接引用预定义的计算逻辑，而无需从零开始推理复杂的业务公式。
 
-为直观说明LA-Schema的增强效果，以下给出一个对比示例。对于查询"2023年锦江区的一般公共预算收入是多少？"，原始Schema仅提供如下信息：
+（3）\textbf{列值提示与约束}：对于知识库$V$中匹配的值域约束以及通过值检索获得的匹配值，
+在对应列上添加\texttt{Value Term}标记，提示模型在WHERE条件中使用正确的匹配值。
 
-\begin{verbatim}
-Table: czys_data
-  - ybggyssrje (DECIMAL)
-  - xzqh_mc (VARCHAR)
-  - nf (INT)
-\end{verbatim}
+为直观说明LA-Schema的增强效果，以下给出一个对比示例。对于查询“帮我找出所有状态为已完工的民生项目，并计算它们的资金结余率。”，原始DDL Schema、M-Schema与LA-Schema的展示结果如表\ref{tab:schema_comparison}所示。
 
-经过逻辑增强后的LA-Schema则呈现为：
+可以看到，原始DDL Schema仅提供了最基本的列名与数据类型，缺乏任何语义信息；
+M-Schema在此基础上补充了中文列描述和示例值，但仍无法表达业务术语映射、值域约束等领域知识。
+而LA-Schema通过显式注入Business Term、Value Term与Virtual Columns等增强信息，使大语言模型能够准确理解“民生项目”对应的物理字段取值、“已完工”的编码映射以及“资金结余率”的计算公式，
+从而显著降低模式链接阶段的错误率。
 
-\begin{verbatim}
-Table: czys_data (财政预算数据表)
-  - ybggyssrje (DECIMAL)
-      [Business Term: 一般公共预算收入 -> ybggyssrje]
-  - xzqh_mc (VARCHAR)
-      [Value Term: 锦江区]
-      #values: 锦江区, 青羊区, 金牛区, ...
-  - nf (INT) -- 年份
-\end{verbatim}
+\begin{table}[htbp]
+    \setlength{\abovecaptionskip}{5pt}
+    \setlength{\belowcaptionskip}{5pt}
+    \caption{原始DDL Schema、M-Schema与LA-Schema对比示例}
+    \label{tab:schema_comparison}
+    \centering
+    \tiny
+    % 使用 \renewcommand 增加表格行高，这会让垂直居中看起来更舒服
+    % \renewcommand{\arraystretch}{1.5} 
+    \begin{tabular}{>{\centering\arraybackslash}m{2cm} m{12.5cm}} % 第一列稍微窄一点，给右边更多空间
+        \toprule
+        \textbf{模式类型} & \textbf{表示内容} \\
+        \midrule
+        DDL Schema & 
+        {\ttfamily CREATE TABLE t\_gov\_proj(\newline
+        \hspace*{1em}p\_id INTEGER PRIMARY KEY, p\_name VARCHAR, amt\_tot INTEGER,\newline
+        \hspace*{1em}amt\_act INTEGER, p\_type TINYINT, status TINYINT,\newline
+        \hspace*{1em}p\_year INTEGER\newline
+        )} \\
+        \midrule
+        M-Schema & 
+        {\ttfamily {[}DB\_ID{]} gover\_database\newline
+        {[}Schema{]}\newline
+        \# Table: t\_gov\_proj\newline
+        {[}\newline
+        (p\_id: INTEGER, Primary Key, 项目编码, Examples:[1001,1002,1003]),\newline
+        (p\_name: VARCHAR, 项目名称, Examples:["经开区智慧城市规划服务项目","T小区安居提升工程项目", "E社区服务中心数字化基础设置建设"]),\newline
+        (amt\_tot: INTEGER, 总概算, Examples:[1000000,2000000,3000000]),\newline
+        (amt\_act: INTEGER, 实际支出, Examples:[100000,200000,300000]),\newline
+        (p\_type: TINYINT, 项目类型, Examples:{[}1,2,3{]}),\newline
+        (status: TINYINT, 状态, Examples:{[}0,1{]}),\newline
+        (p\_year: INTEGER, 年份, Examples:{[}2023,2024,2025{]})\newline
+        {]}} \\
+        \midrule
+        LA-Schema & 
+        {\ttfamily {[}DB\_ID{]} gover\_database\newline
+        {[}Schema{]}\newline
+        \# Table: t\_gov\_proj\newline
+        {[}\newline
+        Physical Columns:\newline
+        (p\_id: INTEGER, Primary Key, 项目编码, Examples:[1001,1002,1003]),\newline
+        (p\_name: VARCHAR, 项目名称, Examples:["经开区智慧城市规划服务项目","T小区安居提升工程项目", "E社区服务中心数字化基础设置建设"]),\newline
+        (amt\_tot: INTEGER, 总概算, Examples:[1000000,2000000,3000000]),\newline
+        (amt\_act: INTEGER, 实际支出, Examples:[100000,200000,300000]),\newline
+        (p\_type: TINYINT, 项目类型, Examples:[1,2,3]),\newline
+        \hspace*{1em}Business Term:\{"民生项目":"民生工程"\},\newline
+        \hspace*{1em}Value Term:\{"民生工程":1,"基础设施":2,"产业扶持":3,"智慧城市":4\}),\newline
+        (status: TINYINT, 状态, Examples:[0,1]),\newline
+        \hspace*{1em}Value Term:\{"进行中":0,"已完工":1\}),\newline
+        (p\_year: INTEGER, 年份, Examples:[2023,2024,2025])\newline
+        Virtual Columns:\newline
+        (balance\_rate: Logical Term, 资金结余率, Examples:[0.1,0.2,0.3],\newline
+        \hspace*{1em}Formula:"(amt\_tot-amt\_act)/amt\_tot")\newline
+        {]}} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
 
-可以看到，LA-Schema通过显式注入业务术语映射和列值匹配信息，使大语言模型能够更准确地理解字段的业务含义和取值范围，从而显著降低模式链接阶段的错误率。
 
 \section{异构候选生成}
 
-在政务数据查询场景中，用户查询的复杂度分布呈现显著的长尾特征——高频需求往往是结构相对固定的标准查询，而低频需求可能涉及多层嵌套、多表关联和复杂聚合等高难度SQL结构。单一的生成路径在处理这种高度异构的查询分布时存在固有局限：对于简单查询，过度复杂的推理策略会引入冗余步骤并增加出错风险；对于复杂查询，直接映射式的生成方式又难以捕获深层的逻辑关系\cite{pourreza2024chase}。
+在政务数据查询场景中，用户查询的复杂度分布呈现显著的长尾特征\cite{needapaper}，即高频需求往往是结构相对固定的标准查询，而低频需求可能涉及多层嵌套、多表关联和复杂聚合等高难度SQL结构。
+单一的生成路径在处理这种高度异构的查询分布时存在固有局限：对于简单查询，过度复杂的推理策略会引入冗余步骤并增加出错风险；
+对于复杂查询，直接映射式的生成方式又难以捕获深层的逻辑关系\cite{pourreza2024chase}。
 
-为此，本文设计了一种异构协同生成框架，包含旨在捕获高频业务逻辑的逻辑映射生成器以及处理复杂推理深度的渐进分治生成器。通过并行驱动两个推理范式截然不同的生成器，构建多样化的SQL候选池，以提升系统对各种复杂度查询的覆盖能力。生成阶段允许大语言模型在非零温度设置下执行随机采样，每个生成器并行生成$n_c$个候选SQL查询，最终总计产生$2n_c$个多样性的SQL候选集。
+为此，本文设计了一种异构协同生成框架，包含旨在捕获高频业务逻辑的逻辑映射生成器以及处理复杂推理深度的渐进分治生成器。
+通过并行驱动两个推理范式截然不同的生成器，构建多样化的SQL候选池，以提升系统对各种复杂度查询的覆盖能力。
+生成阶段允许大语言模型在非零温度\cite{needtemplateapaper}设置下执行随机采样，每个生成器并行生成$n_c$个候选SQL查询，最终总计产生$2n_c$个多样性的SQL候选集。
 
 \subsection{逻辑映射生成器}
 
-逻辑映射生成器深度集成了本章提出的LA-Schema架构，其推理机制建立在领域逻辑映射的基础之上。该生成器通过引导大语言模型对LA-Schema中的关键领域先验进行识别与调用——包括业务术语的语义对齐、虚拟逻辑列的公式引用以及值域约束的条件匹配——有效地将复杂的SQL构造过程从底层的算子推导转化为对预设逻辑块的检索与调用。
+逻辑映射生成器深度集成了本章提出的LA-Schema架构，其推理机制建立在领域逻辑映射的基础之上。
+该生成器通过引导大语言模型对LA-Schema中的领域先验进行识别与调用，其包括业务术语的语义对齐、虚拟逻辑列的公式引用以及值域约束的条件匹配。
+以有效地将复杂的SQL构造过程从底层的算子推导转化为对预设逻辑块的检索与组装。其完整流程如算法\ref{alg:logical_mapping_generator}所示。
 
-逻辑映射生成器的提示模板由四部分组成：动态检索的少样本示例$\{f_1, f_2, \ldots, f_k\}$、LA-Schema增强模式$S^{*}$、任务指令以及用户查询$Q$。其中，任务指令明确要求模型遵循以下规则：（1）优先使用LA-Schema中标记为Virtual Column的虚拟逻辑列，直接在SQL中调用其预定义的计算公式；（2）识别并转换Business Term标记的业务术语，使用映射后的物理字段替换原始表达；（3）利用Value Term标记的匹配列值，确保WHERE条件中使用与数据库一致的标准取值；（4）直接输出最终的可执行SQL，不作过多中间解释。
+\begin{algorithm}[htbp]
+\KwIn{用户查询$Q$，LA-Schema增强模式$S^{*}$，动态样例$F_k = \{f_1, f_2, \ldots, f_k\}$，采样数$n_c$，大语言模型$\text{LLM}$}
+\KwOut{候选SQL集合$\mathcal{C}_{\text{lm}}$}
+初始化：候选集合$\mathcal{C}_{\text{lm}} \leftarrow \emptyset$，提示$P \leftarrow \emptyset$\;
+\tcp{构建提示模板}
+$P \leftarrow P \oplus \text{FormatFewShot}(F_k)$\tcp*{拼接动态少样本示例}
+$P \leftarrow P \oplus S^{*}$\tcp*{拼接LA-Schema增强模式}
+$R \leftarrow \text{BuildRules}()$\tcp*{构建映射规则指令}
+$P \leftarrow P \oplus R \oplus Q$\tcp*{拼接规则指令与用户查询}
+\tcp{多次采样生成候选SQL}
+\For{$i \leftarrow 1$ \KwTo $n_c$}{
+  $\hat{y}_i \leftarrow \text{LLM}(P, \text{temperature} > 0)$\tcp*{随机采样生成SQL}
+  $\mathcal{C}_{\text{lm}} \leftarrow \mathcal{C}_{\text{lm}} \cup \{\hat{y}_i\}$\;
+}
+\Return{$\mathcal{C}_{\text{lm}}$}
+\caption{逻辑映射生成算法}
+\label{alg:logical_mapping_generator}
+\end{algorithm}
 
-该生成器的核心优势在于效率高、对常见查询模式适应性强。对于政务场景中高频出现的指标查询、条件筛选和简单聚合等标准需求，逻辑映射生成器能够充分利用LA-Schema中预置的领域逻辑，快速而准确地完成SQL生成，避免了不必要的推理链条展开。
+算法中，$\text{BuildRules}()$构建的映射规则指令明确要求模型遵循以下约束：
+（1）优先使用LA-Schema中标记为Virtual Column的虚拟逻辑列，直接在SQL中调用其预定义的计算公式；
+（2）识别并转换Business Term标记的业务术语，使用映射后的物理字段替换原始表达；
+（3）利用Value Term标记的匹配列值，确保WHERE条件中使用与数据库一致的标准取值；
+（4）直接输出最终的可执行SQL，不作过多中间解释。
+生成阶段在非零温度下对同一提示执行$n_c$次独立采样，以获得多样化的候选SQL集合$\mathcal{C}_{\text{lm}}$。
+
+该生成器的核心优势在于效率高、对常见查询模式适应性强。
+对于政务场景中高频出现的指标查询、条件筛选和简单聚合等标准需求，逻辑映射生成器能够充分利用LA-Schema中预置的领域逻辑，
+快速而准确地完成SQL生成，避免了不必要的推理链条展开。
 
 \subsection{渐进分治生成器}
 
 与逻辑映射生成器的直接映射策略不同，渐进分治生成器采用渐进式生成与动态少样本的联合方式，以应对知识库未覆盖的复杂需求，如多层嵌套逻辑、多条件组合聚合以及跨表关联查询等。
 
-渐进式生成策略本质上是一种面向Text-to-SQL任务定制化的思维链方法\cite{wei2022chain}，其核心在于将复杂的SQL生成任务拆解为多维度、结构化的子任务序列，引导大语言模型通过逐步推理深度理解查询逻辑。具体而言，该生成器指示模型依次生成以下内容：
+渐进式生成策略本质上是一种面向Text-to-SQL任务定制化的思维链方法\cite{wei2022chain}，
+其核心在于将复杂的SQL生成任务拆解为多维度、结构化的子任务序列，引导大语言模型通过逐步推理深度理解查询逻辑。
+该策略借鉴了CHASE-SQL\cite{pourreza2024chase}中的分治思想和OpenSearch-SQL\cite{xie2025opensearch}中的SQL-Like中间表示设计，
+但针对政务场景做了两方面适配：一是在推理链条中保留了LA-Schema的逻辑增强信息，使分步推理能够参考领域知识；
+二是引入了类SQL中间表示，允许模型先构建查询骨架再填充语法细节，降低了一次性生成完整SQL的复杂度。
+其完整流程如算法\ref{alg:progressive_generator}所示。
 
-（1）\textbf{reason}：分析用户问题的查询意图、涉及的业务逻辑以及可能的SQL构造策略；
+\begin{algorithm}[htbp]
+\KwIn{用户查询$Q$，LA-Schema增强模式$S^{*}$，动态样例$F_k = \{f_1, \ldots, f_k\}$，采样数$n_c$，大语言模型$\text{LLM}$}
+\KwOut{候选SQL集合$\mathcal{C}_{\text{pd}}$}
+初始化：候选集合$\mathcal{C}_{\text{pd}} \leftarrow \emptyset$，提示$P \leftarrow \emptyset$\;
+\tcp{构建提示模板}
+$P \leftarrow P \oplus \text{FormatCoTShot}(F_k)$\tcp*{拼接$\langle \text{Query}, \text{CoT}, \text{SQL} \rangle$格式示例}
+$P \leftarrow P \oplus S^{*}$\tcp*{拼接LA-Schema增强模式}
+$P \leftarrow P \oplus \text{BuildCoTInstr}() \oplus Q$\tcp*{拼接渐进推理指令与用户查询}
+\tcp{多次采样生成候选SQL}
+\For{$i \leftarrow 1$ \KwTo $n_c$}{
+	\tcp{意图分析$\rightarrow$涉及列与值$\rightarrow$SELECT$\rightarrow$SQL-like}
+  $(\text{reason}_i, \text{cols}_i, \text{vals}_i, \text{sel}_i, \hat{y}'_i) \leftarrow \text{LLM}(P, \text{temperature} > 0)$\;
+  
+  $\hat{y}_i \leftarrow \text{LLM}(P, \hat{y}'_i)$\tcp*{基于SQL-like生成最终SQL}
+  $\mathcal{C}_{\text{pd}} \leftarrow \mathcal{C}_{\text{pd}} \cup \{\hat{y}_i\}$\;
+}
+\Return{$\mathcal{C}_{\text{pd}}$}
+\caption{渐进分治生成算法}
+\label{alg:progressive_generator}
+\end{algorithm}
 
-（2）\textbf{columns}：确定SQL查询中最终使用到的所有表和列；
+算法中，渐进推理指令$\text{BuildCoTInstr}()$要求模型在单次生成中按照表\ref{tab:cot_components}所定义的结构化格式，
+以自回归方式依次输出意图分析（reason）、涉及列（columns）、筛选值（values）、SELECT内容以及SQL-like骨架共五个部分，前序输出自然成为后续生成的上下文，形成递进式的推理链。
+随后，系统将生成的SQL-like骨架作为上下文，再次调用大语言模型补充完整的JOIN条件和语法细节，生成最终可执行的SQL查询。
+动态少样本示例以完整的$\langle \text{Query}, \text{CoT}, \text{SQL} \rangle$三元组呈现，
+为模型提供渐进推理的范式参考。生成阶段同样在非零温度下执行$n_c$次独立采样，产生多样化的候选集合$\mathcal{C}_{\text{pd}}$。
 
-（3）\textbf{values}：提取SQL中的筛选条件和对应的具体取值；
+该生成器的核心优势在于对复杂查询的处理能力。当查询涉及多层嵌套逻辑、复杂的条件组合或跨表关联时，
+分步推理机制能够引导模型逐步构建查询结构，避免因一步到位生成长SQL而导致的逻辑遗漏或结构错误。
+同时，渐进生成器输出的结构化推理过程本身也具有可解释性，有助于后续的错误分析和结果追溯。
 
-（4）\textbf{SELECT}：明确SELECT子句的具体内容和聚合方式；
-
-（5）\textbf{SQL-like}：生成一条忽略JOIN条件的类SQL语句，聚焦于核心查询逻辑；
-
-（6）\textbf{SQL}：在SQL-like的基础上补充完整的JOIN条件和语法细节，输出最终SQL。
-
-这种渐进式的推理过程借鉴了CHASE-SQL\cite{pourreza2024chase}中的分治策略思想和OpenSearch-SQL\cite{xie2025opensearch}中的SQL-Like中间表示设计，但针对政务场景做了两方面的适配：一是在推理链条中保留了LA-Schema的逻辑增强信息，使分步推理过程能够参考领域知识；二是引入了类SQL中间表示，允许模型先构建查询的骨架逻辑再填充细节语法，降低了一次性生成完整SQL的复杂度。
-
-渐进分治生成器的提示模板同样包含动态少样本示例（以$\langle \text{Query}, \text{CoT}, \text{SQL} \rangle$格式呈现）和LA-Schema信息，但其任务指令强调按照上述结构化格式逐步输出，要求模型在生成最终SQL之前先展开充分的分析和推理。
-
-该生成器的核心优势在于对复杂查询的处理能力。当查询涉及多层嵌套逻辑、复杂的条件组合或跨表关联时，分步推理机制能够引导模型逐步构建查询结构，避免因一步到位生成长SQL而导致的逻辑遗漏或结构错误。同时，渐进生成器输出的结构化推理过程本身也具有可解释性，有助于后续的错误分析和结果追溯。
-
-此外，渐进分治生成器与动态样例库之间存在正向反馈关系——当该生成器产生的候选SQL经判别后被确认为正确答案时，其完整的$\langle \text{Query}, \text{CoT}, \text{SQL} \rangle$输出可作为新的高质量样例纳入动态样例库，为后续相似问题的处理提供更精准的参考。
+此外，渐进分治生成器与动态样例库之间存在正向反馈关系。当该生成器产生的候选SQL经判别后被确认为正确答案时，
+其完整的$\langle \text{Query}, \text{CoT}, \text{SQL} \rangle$输出可作为新的高质量样例纳入动态样例库，为后续相似问题的处理提供更精准的参考。
 
 \section{基于执行反馈的查询修复}
 
