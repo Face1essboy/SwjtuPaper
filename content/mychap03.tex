@@ -21,14 +21,15 @@ y^* \equiv \mathop{\arg\max}_{y \in Y} P(y \mid Q, S, K, F)
 而这一看似简单的问题时，系统需要理解“一般公共预算收入”对应的物理字段、“同比增长率”隐含的跨年度计算逻辑以及“区县”维度的分组聚合方式，才能生成正确的SQL查询。
 这一过程涉及的业务知识远超数据库模式本身所能表达的信息边界。
 
-如图\ref{fig:chap03_background}所示。与通用领域的Text-to-SQL任务相比，政务数据查询面临着更为突出的复杂性挑战，主要体现在以下方面：
-\begin{figure}[htbp]
-	\centering
-    % \setlength{\belowcaptionskip}{-12pt}
-	% \includegraphics[width=0.85\textwidth]{test.pdf}
-	\caption{政务领域问数困境}
-	\label{fig:chap03_background}
-\end{figure}
+% 如图\ref{fig:chap03_background}所示。
+与通用领域的Text-to-SQL任务相比，政务数据查询面临着更为突出的复杂性挑战，主要体现在以下方面：
+% \begin{figure}[htbp]
+% 	\centering
+%     % \setlength{\belowcaptionskip}{-12pt}
+% 	% \includegraphics[width=0.85\textwidth]{test.pdf}
+% 	\caption{政务领域问数困境}
+% 	\label{fig:chap03_background}
+% \end{figure}
 
 （1）业务术语的语义模糊与别名多样。政府工作存在大量专业术语及其简称、别名和口语化表达。
 例如，“一般公共预算收入”可能被简称为“一般预算收入”或“公共预算收入”，而数据库中的物理字段名可能为\texttt{ybsr}等缩写形式。这种多对一的映射关系显著增加了模式链接的难度。
@@ -147,7 +148,7 @@ HNSW通过构建多层跳跃链接的近邻图结构，在高维空间中实现�
 
 动态样例库的构建流程如图\ref{fig:dynamic_example_retrieval}所示。
 首先，利用大语言模型对原始的“问题-SQL”对进行知识解构，生成中间层的思维链（Chain-of-Thought，CoT）信息。
-该过程将每个样例从$\langle \text{Query}, \text{SQL} \rangle$二元组扩展为包含完整推理逻辑的$\langle \text{Query}, \text{CoT}, \text{SQL} \rangle$三元组。以为构建一个逻辑表达能力更强的样例库。
+该过程将每个样例从$\langle \text{Query}, \text{SQL} \rangle$二元组扩展为包含完整推理逻辑的$\langle \text{Query}, \text{CoT}, \text{SQL} \rangle$三元组。以此构建一个逻辑表达能力更强的样例库。
 CoT信息的具体组成如表\ref{tab:cot_components}所示。
 这种结构化的推理链不仅为后续生成器提供了更丰富的推理线索，也使得模型能够通过模仿样例中的推理过程来提升自身的逻辑表达能力。
 
@@ -186,6 +187,14 @@ Q' = \text{Mask}(Q)
 并在同样经过掩码处理的样例问题向量库中，使用基于HNSW的近似k近邻检索（Approximate Nearest Neighbor,ANN）算法召回一批候选样例集合$F_{\text{cand}}$。
 掩码操作使得相似度计算更关注问题的结构与语义特征，而非表面的实体匹配，从而有效提升跨数据库场景下的样例检索质量。
 
+\begin{figure}[htbp]
+	\centering
+    % \setlength{\belowcaptionskip}{-12pt}
+	\includegraphics[width=0.85\textwidth]{figures/chap03/动态样例库.pdf}
+	\caption{动态样例库构建流程图}
+	\label{fig:dynamic_example_retrieval}
+\end{figure}
+
 其次在候选样例召回的基础上，系统进一步引入查询结构相似度对候选样例进行精排。
 具体地，先利用一个初步预测模型为$Q$生成近似SQL查询$\hat{s}_Q$作为目标SQL的估计，
 然后将$\hat{s}_Q$与每个候选样例的SQL查询$s_i$根据SQL关键词编码为二元离散语法向量，计算结构相似度$\text{Sim}_{\text{sql}}(\hat{s}_Q, s_i)$。
@@ -197,15 +206,9 @@ F_k = \mathop{\text{Top-}k}_{f_i \in F_{\text{cand}}} \left\{ \text{Sim}_{\text{
 其中$\text{Sim}_{\text{ques}}$为掩码问题向量间的相似度，$F_k$即为最终选取的$k$个动态样例。
 选定的样例以$\langle \text{Query}, \text{CoT}, \text{SQL} \rangle$三元组的形式拼接至提示模板中，与数据库模式、检索到的相似值及领域规则共同构成完整的少样本提示，以引导大语言模型生成目标SQL。
 
-最终的动态样例库具备渐进更新的能力。当渐进分治生成器产生的候选SQL被判别模型确认为最优答案后，该查询及其对应的推理过程可作为新的样例加入样例库，实现样例库的持续丰富与质量提升。
+最终的动态样例库具备渐进更新的能力。当渐进分治生成器产生的候选SQL被判别模型确认为最优答案后，该查询及其对应的推理过程可作为新的样例加入样例库（可控制是否开启），实现样例库的持续丰富与质量提升。
 
-\begin{figure}[htbp]
-	\centering
-    \setlength{\belowcaptionskip}{-12pt}
-	% \includegraphics[width=0.85\textwidth]{test.pdf}
-	\caption{动态样例库构建流程图}
-	\label{fig:dynamic_example_retrieval}
-\end{figure}
+
 
 % todo
 \section{基于逻辑增强的模式链接}
@@ -261,12 +264,7 @@ LA-Schema中会以\texttt{[Business Term: 一般公共预算收入 $\rightarrow$
 
 为直观说明LA-Schema的增强效果，以下给出一个对比示例。对于查询“帮我找出所有状态为已完工的民生项目，并计算它们的资金结余率。”，原始DDL Schema、M-Schema与LA-Schema的展示结果如表\ref{tab:schema_comparison}所示。
 
-可以看到，原始DDL Schema仅提供了最基本的列名与数据类型，缺乏任何语义信息；
-M-Schema在此基础上补充了中文列描述和示例值，但仍无法表达业务术语映射、值域约束等领域知识。
-而LA-Schema通过显式注入Business Term、Value Term与Virtual Columns等增强信息，使大语言模型能够准确理解“民生项目”对应的物理字段取值、“已完工”的编码映射以及“资金结余率”的计算公式，
-从而显著降低模式链接阶段的错误率。
-
-\begin{table}[htbp]
+\begin{table}[H]
     \setlength{\abovecaptionskip}{5pt}
     \setlength{\belowcaptionskip}{5pt}
     \caption{原始DDL Schema、M-Schema与LA-Schema对比示例}
@@ -274,7 +272,8 @@ M-Schema在此基础上补充了中文列描述和示例值，但仍无法表达
     \centering
     \tiny
     % 使用 \renewcommand 增加表格行高，这会让垂直居中看起来更舒服
-    % \renewcommand{\arraystretch}{1.5} 
+    % \renewcommand{\arraystretch}{1.5}
+    \scalebox{0.89}{% 略缩小以在[H]下与前后文同页排开，避免 Overfull \vbox
     \begin{tabular}{>{\centering\arraybackslash}m{2cm} m{12.5cm}} % 第一列稍微窄一点，给右边更多空间
         \toprule
         \textbf{模式类型} & \textbf{表示内容} \\
@@ -288,7 +287,7 @@ M-Schema在此基础上补充了中文列描述和示例值，但仍无法表达
         \midrule
         M-Schema & 
         {\ttfamily {[}DB\_ID{]} gover\_database\newline
-        {[}Schema{]}\newline
+        {[}Schema{]}
         \# Table: t\_gov\_proj\newline
         {[}\newline
         (p\_id: INTEGER, Primary Key, 项目编码, Examples:[1001,1002,1003]),\newline
@@ -302,7 +301,7 @@ M-Schema在此基础上补充了中文列描述和示例值，但仍无法表达
         \midrule
         LA-Schema & 
         {\ttfamily {[}DB\_ID{]} gover\_database\newline
-        {[}Schema{]}\newline
+        {[}Schema{]}
         \# Table: t\_gov\_proj\newline
         {[}\newline
         Physical Columns:\newline
@@ -312,7 +311,7 @@ M-Schema在此基础上补充了中文列描述和示例值，但仍无法表达
         (amt\_act: INTEGER, 实际支出, Examples:[100000,200000,300000]),\newline
         (p\_type: TINYINT, 项目类型, Examples:[1,2,3]),\newline
         \hspace*{1em}Business Term:\{"民生项目":"民生工程"\},\newline
-        \hspace*{1em}Value Term:\{"民生工程":1,"基础设施":2,"产业扶持":3,"智慧城市":4\}),\newline
+        \hspace*{1em}Value Term:\{"民生工程":1,"基础设施":2,"产业扶持":3\}),\newline
         (status: TINYINT, 状态, Examples:[0,1]),\newline
         \hspace*{1em}Value Term:\{"进行中":0,"已完工":1\}),\newline
         (p\_year: INTEGER, 年份, Examples:[2023,2024,2025])\newline
@@ -321,8 +320,14 @@ M-Schema在此基础上补充了中文列描述和示例值，但仍无法表达
         \hspace*{1em}Formula:"(amt\_tot-amt\_act)/amt\_tot")\newline
         {]}} \\
         \bottomrule
-    \end{tabular}
+    \end{tabular}%
+    }
 \end{table}
+
+可以看到，原始DDL Schema仅提供了最基本的列名与数据类型，缺乏任何语义信息；
+M-Schema在此基础上补充了中文列描述和示例值，但仍无法表达业务术语映射、值域约束等领域知识。
+而LA-Schema通过显式注入Business Term、Value Term与Virtual Columns等增强信息，使大语言模型能够准确理解“民生项目”对应的物理字段取值、“已完工”的编码映射以及“资金结余率”的计算公式，
+从而显著降低模式链接阶段的错误率。
 
 
 \section{异构候选生成}
@@ -387,7 +392,7 @@ $P \leftarrow P \oplus R \oplus Q$\tcp*{拼接规则指令与用户查询}
 \KwOut{候选SQL集合$\mathcal{C}_{\text{pd}}$}
 初始化：候选集合$\mathcal{C}_{\text{pd}} \leftarrow \emptyset$，提示$P \leftarrow \emptyset$\;
 \tcp{构建提示模板}
-$P \leftarrow P \oplus \text{FormatCoTShot}(F_k)$\tcp*{拼接$\langle \text{Query}, \text{CoT}, \text{SQL} \rangle$格式示例}
+$P \leftarrow P \oplus \text{FormatCoTShot}(F_u)$\tcp*{拼接$\langle \text{Query}, \text{CoT}, \text{SQL} \rangle$格式示例}
 $P \leftarrow P \oplus S^{*}$\tcp*{拼接LA-Schema增强模式}
 $P \leftarrow P \oplus \text{BuildCoTInstr}() \oplus Q$\tcp*{拼接渐进推理指令与用户查询}
 \tcp{多次采样生成候选SQL}
@@ -425,108 +430,139 @@ $P \leftarrow P \oplus \text{BuildCoTInstr}() \oplus Q$\tcp*{拼接渐进推理�
 （1）字段名不存在或拼写错误，通常由模式链接阶段的遗漏或大语言模型的幻觉引起；
 （2）表连接关系错误，如遗漏必要的JOIN条件或使用了错误的连接键；
 （3）SQL语法错误，如括号不匹配、关键字使用不当等；
-（4）查询执行结果为空，可能因WHERE条件中的值与数据库实际存储不匹配所致；
-（5）聚合逻辑错误，如GROUP BY子句缺失必要字段或聚合函数使用不当。
+（4）聚合逻辑错误，如GROUP BY子句缺失必要字段或聚合函数使用不当。
 
 查询修复器的工作机制基于自反思（Self-Reflection）方法\cite{shinn2024reflexion}。
 整个过程如图\ref{fig:chap03_fix}所示。对于候选集中的每条SQL查询，系统首先在目标数据库上执行该查询，捕获执行结果或错误信息。
-若执行成功且返回非空结果，则保留该候选；若执行失败（如语法错误）或返回空结果集，
-则将执行器的反馈信息包括具体的错误描述或空结果提示以及原始用户问题、LA-Schema信息一并构造为修复提示，
+若执行成功则保留该候选；若执行失败（如语法错误），
+则将执行器的反馈信息包括具体的错误描述以及原始用户问题、LA-Schema信息一并构造为修复提示，
 送入大语言模型进行反思与修复。修复后的SQL会再次执行以验证其有效性。
 
-为避免无限迭代带来的效率损耗和不收敛风险，修复过程设置了最大尝试次数$\beta$（本文设定$\beta = 3$）。
-当满足以下任一条件时，修复过程终止：
-（1）修复后的SQL执行成功且返回非空结果；
-（2）达到最大尝试次数$\beta$。若修复在$\beta$次尝试后仍未成功，则保留最后一次修复的结果或标记该候选为不可用，在后续判别阶段予以排除。
-
-查询修复器的引入有效降低了候选集中的无效查询比例，为后续的候选判别模块提供了更高质量的输入，从而间接提升了最终查询结果的准确率。
-
 \begin{figure}[htbp]
-	\setlength{\belowcaptionskip}{-12pt}
+	% \setlength{\belowcaptionskip}{-12pt}
 	\centering
-	\includegraphics[width=0.8\textwidth]{figures/chap03/查询修复器.pdf}
+	\includegraphics[width=0.85\textwidth]{figures/chap03/查询修复器.pdf}
 	\caption{查询修复流程图}
 	\label{fig:chap03_fix}
 \end{figure}
 
+为避免无限迭代带来的效率损耗和不收敛风险，修复过程设置了最大尝试次数$\beta$（本文设定$\beta = 3$）。
+当满足以下任一条件时，修复过程终止：
+（1）修复后的SQL执行成功；
+（2）达到最大尝试次数$\beta$。若修复在$\beta$次尝试后仍未成功，则保留最后一次修复的结果或标记该候选为不可用，在后续判别阶段予以排除。
+
+查询修复器的引入有效降低了候选集中的无效查询比例，为后续的候选判别模块提供了更高质量的输入，从而间接提升了最终查询结果的准确率。
+
+
+
 
 \section{候选判别模型}
 
-经过异构候选生成和查询修复后，系统已构建了包含$2n_c$个候选SQL的多样化查询池。本节的目标是从该候选集中可靠地选出最终正确的SQL查询。
+经过异构候选生成与查询修复后，系统可为每个用户问题构建包含$2n_c$个候选SQL的查询池。本节的目标是从该候选集中可靠地选出最终正确的SQL查询。
 
+现有许多Text-to-SQL方法采用候选查询的一致性投票（Self-Consistency）策略，以得票最多的结果作为最终输出\cite{xie2025opensearch}。
+然而，在复杂业务查询场景中，最一致的答案并不总是正确答案\cite{pourreza2024chase}，其一致性选择策略与上界精度存在一定的性能差距。
+为此，本文构建选择智能体$\text{Agent}_s$，并将候选选择建模为配对偏好判别问题。
+具体而言，$\text{Agent}_s$以用户问题、辅助提示信息、相关增强模式以及一对候选SQL为输入，判断两者中哪一个更可能正确，再通过两两比较与得分聚合确定最终输出。整体流程如图\ref{fig:chap03_selection}所示。
 
-目前许多Text-to-SQL方法依靠候选查询的一致性投票（Self-Consistency）来选择得票最多的答案\cite{xie2025opensearch}。
-然而，研究表明，在复杂的业务查询场景中，最一致的答案并非总是正确答案\cite{pourreza2024chase}。
-\cite{pourreza2024chase}的实验数据显示，候选池的上界精度与一致性投票结果之间存在约14\%的性能差距，说明通过更精确的选择机制仍有显著的提升空间。
-受此启发本文同样采用基于微调二分类模型的选择智能体$\text{Agent}_s$来进行候选判别，通过配对比较与得分聚合的策略替代一致性投票。整个过程如图\ref{fig:chap03_selection}所示。
 \begin{figure}[htbp]
-	\setlength{\belowcaptionskip}{-12pt}
 	\centering
-	% \includegraphics[width=0.92\textwidth]{figures/chap03/候选判别流程图.pdf}
-	\caption{候选判别原理图}
+	\begin{subfigure}[t]{0.85\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/chap03/候选判别离线训练.pdf}
+		\caption{离线训练}
+		\label{fig:selection_train}
+	\end{subfigure}
+
+	\vspace{0.6em}
+
+	\begin{subfigure}[t]{0.85\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/chap03/候选判别在线推理.pdf}
+		\caption{在线推理}
+		\label{fig:selection_use}
+	\end{subfigure}
+	\caption{候选判别整体流程}
 	\label{fig:chap03_selection}
 \end{figure}
 
 \subsection{训练样本构建}
 
-候选判别模型的训练数据来源于在训练集上运行候选生成所产生的SQL候选集。具体构建流程如下：
+判别模型的训练数据来源于在训练集上运行候选生成模块所得到的候选SQL集合。
+对于训练集中的每个问题$Q_u$，系统首先利用两个异构生成器产生$2n_c$个候选SQL，并在目标数据库上执行所有候选查询。
+设标准SQL的执行结果为$R_u^{*}$，候选$c_k$的执行结果为$R_k$。系统依据执行结果对候选进行聚类，将执行结果相同的候选划分至同一簇，再将各簇对应的执行结果与$R_u^{*}$进行比较：若二者一致，则该簇记为正确簇；否则记为错误簇。
 
-对于训练集中的每个问题$Q_u$，首先利用两个异构生成器产生$2n_c$个候选SQL查询。
-然后，在目标数据库上执行所有候选查询，根据执行结果进行分组聚类。将产生相同执行结果的候选归为同一聚类，再将各聚类的执行结果与标准SQL的执行结果进行比对，标记其为正确聚类或错误聚类。
-在至少有一个聚类包含正确查询且其他聚类包含错误查询的情况下，系统从正确聚类和错误聚类中分别抽取候选，创建训练示例元组$T_{ij}$：
+在同时存在正确簇与错误簇的情况下，系统从两类簇中抽取候选，构造配对训练样本:
 \begin{equation}
-T_{ij} = (Q_u, H_u, c_i, c_j, S^{*}_{ij}, y_{ij})
+T_{ij}=(Q_u,H_u,c_i,c_j,S^{*}_{ij},y_{ij}),
 \end{equation}
-其中$Q_u$为用户问题，$H_u$为辅助提示信息，$c_i$和$c_j$为两个候选SQL查询，$S^{*}_{ij}$是两个候选查询所使用的增强数据库模式的并集，$y_{ij} \in \{0, 1\}$是指示$c_i$和$c_j$哪个是正确查询的标签。
+其中，$Q_u$表示用户问题，$H_u$表示辅助提示信息，$c_i$与$c_j$表示两个待比较的候选SQL，$S^{*}_{ij}$表示$c_i$和$c_j$所涉及增强数据库模式的并集，$y_{ij}\in\{0,1\}$为监督标签。当$c_i$来自正确簇且$c_j$来自错误簇时，记$y_{ij}=1$；反之记$y_{ij}=0$。
 
-在构建训练样本时，系统注重高价值负例的挖掘。所谓高价值负例，是指执行结果与正确答案非常接近但实际逻辑存在细微差异的候选SQL，
-例如仅在一个WHERE条件上有差别或聚合范围略有不同。这类样本能够训练判别模型学习辨别SQL查询之间的细微语义差异，而不是仅依赖表面的结构特征做判断。
-为增加高价值负例的比例，对于训练集中没有正确候选的问题，将标准SQL的结果作为提示信息纳入$H_u$，引导生成器产生更多与正确答案“相似但不同”的候选查询。
+在样本构建过程中重点挖掘高价值负例。所谓高价值负例，是指执行结果与正确答案接近、但查询逻辑存在关键偏差的错误SQL，
+例如筛选条件边界不同、聚合范围不一致或连接关系错误等。
+相较于随机负例，这类样本更能反映真实业务场景中的判别难点。
+对于训练集中未能生成正确候选的问题，本文仅在离线样本构造阶段引入标准SQL的执行结果，用于引导生成器产生更多与正确答案相似但不完全相同的错误候选，从而提升高价值负例的比例；该信息不作为判别模型在线推理时的输入，以避免信息泄漏。
+
+\subsection{判别模型训练}
+
+系统以Qwen-8B为基础模型构建选择智能体$\text{Agent}_s$，并采用指令式监督微调方式\cite{123}(Instruction Supervised Fine-Tuning,ISFT)进行训练。
+对于每个训练样本$T_{ij}$，系统将用户问题$Q_u$、辅助提示信息$H_u$、模式并集$S^{*}_{ij}$以及候选SQL$(c_i,c_j)$按统一模板组织为输入序列，要求模型输出二元判别结果，以表示两者中哪一个更可能为正确查询。由此，$\text{Agent}_s$学习的是如下条件偏好概率：
+\begin{equation}
+p_{\theta}(y_{ij}=1 \mid Q_u,H_u,S^{*}_{ij},c_i,c_j),
+\end{equation}
+其中$\theta$表示大模型经微调后的模型参数。
+
+训练目标采用二分类交叉熵损失函数：
+\begin{equation}
+\mathcal{L}_{\text{pair}}
+=
+-y_{ij}\log p_{\theta}(y_{ij}=1\mid T_{ij})
+-(1-y_{ij})\log p_{\theta}(y_{ij}=0\mid T_{ij}).
+\end{equation}
+考虑到高价值负例对模型判别能力的提升更为显著，本文进一步引入样本权重$w_{ij}$，得到总体优化目标：
+\begin{equation}
+\mathcal{L}
+=
+\sum_{(i,j)} w_{ij}\,\mathcal{L}_{\text{pair}}.
+\end{equation}
+其中，对语义接近但逻辑错误的高价值负例赋予更高权重，以增强模型对细微差异的敏感性。为兼顾训练效率与模型性能，本文采用参数高效微调策略对大模型进行训练，使其学习候选SQL之间的相对优劣关系且不丢失基础模型理解能力。
 
 \subsection{配对判别与最优候选选择}
 
-选择智能体$\text{Agent}_s$采用配对（pairwise）比较的方式进行候选判别，而非直接对每个候选进行绝对打分或多分类。
-选择配对比较策略的原因在于：
-（1）绝对打分要求模型具备精确评估SQL质量的能力，这在候选之间差异微小的情况下极为困难；
-（2）多分类方法需要同时比较所有候选，当候选数量较多时任务复杂度急剧上升；
-（3）配对比较将任务简化为二选一的偏好判断，降低了模型的学习难度，同时通过多轮配对组合仍能覆盖所有候选之间的关系。
+在线推理阶段，系统基于配对比较与得分聚合机制，从候选集
+$C=\{c_1,c_2,\ldots,c_{2n_c}\}$
+中选出最终SQL，其完整流程如算法\ref{alg:candidate_selection}所示。
 
-在线推理阶段，系统基于配对比较与得分聚合从候选集中选出最优SQL查询，其完整流程如算法\ref{alg:candidate_selection}所示。
+\begin{algorithm}[H]
+	\KwIn{候选集$C=\{c_1,c_2,\ldots,c_{2n_c}\}$，用户问题$Q_u$，目标数据库$DB$，增强数据库模式$S^{*}$，选择智能体$\text{Agent}_s$}
+	\KwOut{最佳SQL查询$c_f$}
+	\ForEach{$c_i\in C$}{
+	  $\text{score}_i \leftarrow 0$\;
+	}
+	\ForEach{$(c_i,c_j)\in C\times C$ \textbf{且} $i\neq j$}{
+	  \eIf{$\text{ans}(c_i,DB)=\text{ans}(c_j,DB)$}{
+		$\text{winner}\leftarrow i$\tcp*{结果一致时，无需调用判别模型}
+	  }{
+		$S^{*}_{ij}\leftarrow \text{SchemaUnion}(c_i,c_j,S^{*})$\;
+		$\text{winner}\leftarrow \text{Agent}_s(Q_u,S^{*}_{ij},c_i,c_j)$\;
+	  }
+	  $\text{score}_{\text{winner}}\leftarrow \text{score}_{\text{winner}}+1$\;
+	}
+	$c_f\leftarrow \arg\max_{c_i\in C}\text{score}_i$\;
+	\Return{$c_f$}
+	\caption{SQL候选集选取算法}
+	\label{alg:candidate_selection}
+	\end{algorithm}
 
-\begin{algorithm}[htbp]
-\KwIn{候选集$C = \{c_1, c_2, \ldots, c_{2n_c}\}$，用户查询$Q_u$，目标数据库$DB$，增强数据库模式$S^{*}$，选择智能体$\text{Agent}_s$}
-\KwOut{最佳SQL查询$c_f$}
-\ForEach{$c_i \in C$}{
-  $\text{score}_i \leftarrow 0$\tcp*{分数初始化}
-}
-\ForEach{$(c_i, c_j) \in C \times C$ \textbf{且} $i \neq j$}{
-  \eIf{$\text{ans}(c_i, DB) = \text{ans}(c_j, DB)$}{
-    $\text{winner} \leftarrow i$\tcp*{执行结果一致，任选一方为胜者}
-  }{
-    $S^{*}_{ij} \leftarrow \text{SchemaUnion}(c_i, c_j, S^{*})$\tcp*{合并两候选所用模式}
-    $\text{winner} \leftarrow \text{Agent}_s(S^{*}_{ij}, Q_u, c_i, c_j)$\tcp*{判别模型选择更优候选}
-  }
-  $\text{score}_{\text{winner}} \leftarrow \text{score}_{\text{winner}} + 1$\;
-}
-$c_f \leftarrow \arg\max_{c_i \in C} \text{score}_i$\;
-\Return{$c_f$}
-\caption{SQL候选集选取算法}
-\label{alg:candidate_selection}
-\end{algorithm}
-
-算法的核心思想是将候选选择转化为两两配对的竞技机制，并融合执行结果的一致性信号与模型判别的偏好信号。
-对于每对不同的候选$(c_i, c_j)$，系统首先在目标数据库$DB$上执行两者并比较结果：
-若执行结果一致，说明两个候选在功能上等价，直接将其中一方标记为胜者并累加得分，避免不必要的模型调用；
-若执行结果不同，则生成两个候选所使用增强模式的并集$S^{*}_{ij}$，调用选择智能体$\text{Agent}_s$进行二分类判别。
-$\text{Agent}_s$的输入包含用户问题$Q_u$、模式并集$S^{*}_{ij}$以及两个候选SQL，输出指示哪个候选更可能正确，胜者得分加一。
-为减轻配对比较中的顺序偏差，对于每对查询同时比较$(c_i, c_j)$和$(c_j, c_i)$两个方向，确保判别结果不受候选呈现顺序的影响。
-遍历所有候选对后，选择累计得分最高的候选$c_f$作为最终输出：
+对于任意两个不同候选$(c_i,c_j)$，系统首先在目标数据库$DB$上执行二者并比较执行结果。若$\text{ans}(c_i,DB)=\text{ans}(c_j,DB)$，则说明二者在功能上等价，无需调用判别模型；若二者执行结果不同，则构造其相关增强模式并集$S^{*}_{ij}=\text{SchemaUnion}(c_i,c_j,S^{*})$，并调用$\text{Agent}_s$进行二元判别。考虑到输入顺序可能影响模型输出，系统对每一对候选同时比较$(c_i,c_j)$与$(c_j,c_i)$两个方向，并将胜者分别累加得分，从而减轻顺序偏差。
+最终，系统选择累计得分最高的候选作为输出：
 \begin{equation}
-c_f = \arg\max_{c_i \in C} \text{score}_i
+c_f=\arg\max_{c_i\in C}\text{score}_i.
 \label{eq:selection}
 \end{equation}
+若出现平局，系统优先选择执行成功且返回非空结果的候选；若仍无法区分，则进一步选择SQL语句长度较短的候选作为最终结果。通过上述机制，本文将候选选择由一致性投票转化为基于配对偏好的全局竞争过程，从而更有效地利用候选间的细粒度差异信息，提高最终SQL的选取准确率。
 
-若出现多个候选得分相同的平局，系统优先选择执行成功（非空结果）的候选，其次选择SQL语句长度较短的候选，以此作为辅助决策信号。
+
 
 % todo
 \section{实验与结果分析}
@@ -578,9 +614,11 @@ c_f = \arg\max_{c_i \in C} \text{score}_i
 在实验配置方面，本文使用Qwen3-Coder-30B-A3B-Instruct\cite{qwen2024}作为基础调用大语言模型，用于模式链接、候选生成和查询修复等主要环节；
 使用Qwen3-8B\cite{qwen2024}作为候选判别模型的基础模型进行微调训练。
 
+存储引擎使用Milvus作为向量库构建存储，PostgreSQL作为领域知识库，并联合使用Milvus和PostgreSQL实现动态样例库。在工程上使用Redis作为热点缓存工具，提高调用性能。
 联合使用Milvus、PostgreSQL作为向量库、知识库以及样例库的存储引擎。
-动态样例检索的样本数$n_f$设为5。模式链接阶段，候选列的召回数$k$设为10。
-非候选生成阶段大模型温度参数$temperature = 0.3$。而在候选生成阶段，每个生成器在温度参数$temperature = 0.7$的设置下各采样生成$n_c = 10$个候选SQL。
+
+实现设置上，动态样例检索的样本数$n_f$设为5，此外样例库实验评估阶段关闭在线增量更新，避免测试数据泄漏。模式链接阶段，候选列的召回数$k$设为10。
+除候选生成外的其他LLM调用阶段温度参数$temperature = 0.3$。而在候选生成阶段，每个生成器在温度参数$temperature = 0.7$的设置下各采样生成$n_c = 10$个候选SQL。
 
 
 \subsection{评估指标与对比基线}
@@ -692,7 +730,6 @@ XiYan-SQL和CHASE-SQL等包含微调组件的方法表现相对优异，分别�
 
 \textbf{w/o Logical Generator \& w/o DC Generator}。分别去除逻辑映射生成器和渐进分治生成器后，执行准确率分别下降3.54\%和2.59\%。
 逻辑映射生成器的贡献略大于渐进分治生成器，这反映了政务数据集中包含较多需要领域逻辑映射的业务指标查询。
-两个生成器的联合贡献大于各自独立贡献之和，表明两者在处理不同复杂度的业务查询时具有协同互补效应。
 
 \textbf{w/o Query Fixer}。去除查询修复器后，准确率下降2.23\%至89.24\%。
 虽然修复器的单独贡献相对较小，但其通过基于执行反馈的迭代修正机制，有效提升了候选集中可执行查询的比例，为后续判别模型提供了更高质量的输入。
@@ -808,7 +845,7 @@ Qwen3-8B的判别准确率提升至72.85\%，提升了17.23个百分点。
 	\end{tabular}
 \end{table}
 
-端到端单条查询存在波动，累计需7$\sim$55次LLM调用，Token消耗范围为12500$\sim$43000个，具体取决于候选修复的轮次以及生成器生成的多样性。
+端到端单条查询存在波动，累计需7$\sim$24次LLM调用，Token消耗范围为12500$\sim$43000个，具体取决于候选修复的轮次以及生成器生成的多样性。
 
 其中候选生成环节占据了最大的时间比重（42.6\%），平均耗时17.1秒，
 这主要是由于两个生成器各需采样多个候选并涉及较长的提示序列，尽管双路并行执行已有效压缩了该环节的绝对耗时。
@@ -819,7 +856,7 @@ Qwen3-8B的判别准确率提升至72.85\%，提升了17.23个百分点。
 当所有候选SQL均执行成功时无需触发修复流程，调用次数和Token消耗均为零；当存在执行失败的候选时，最多进行3轮迭代修复。
 
 对于政务数据查询这一非实时交互的应用场景而言，40秒左右的响应时间处于可接受范围内。
-在实际部署中，候选生成的并行化策略（两个生成器同时运行且多线程生成候选SQL）已将该环节的耗时控制在合理水平。若需进一步降低延迟，可考虑减少每个生成器的采样数量（如降低至5或者3），以在准确率与响应速度之间取得更优的折中。
+在实际部署中，候选生成的并行化策略（两个生成器同时运行且多线程生成候选SQL）已将该环节的耗时控制在合理水平；同时SQL执行结果的缓存大大提高了使用性能。若需进一步降低延迟，可考虑减少每个生成器的采样数量（如降低至5或者3），以在准确率与响应速度之间取得更优的折中。
 
 \subsection{公共数据集实验结果}
 BIRD和Spider是两个广受认可的跨域数据集，分有不重叠的训练集、开发集、测试集。BIRD包含来自95个大型数据库的超过12,751个独特的问题-SQL对，涵盖37个专业领域，其数据库设计模仿现实世界场景，具有杂乱的数据行和复杂的模式。Spider包含10,181个问题和5,693个独特的复杂SQL查询，涉及200个数据库，覆盖138个领域。
@@ -837,7 +874,7 @@ BIRD\cite{liu2025bird}开发集（BIRD-dev）和Spider\cite{zeng2018spider}测�
 	\centering
 	\begin{tabular}{llcc}
 		\toprule
-		方法 & 使用模型 & BIRD-dev/\% & Spider-test/\% \\
+		方法 & 使用模型 & BIRD/\% & Spider/\% \\
 		\midrule
 		DeepSeek-V3 & DeepSeek-V3 & 63.80 & 85.80 \\
 		Qwen3-Coder & Qwen3-Coder-30B-A3B-Instruct & 67.33 & 88.27 \\
