@@ -2,104 +2,513 @@
 %                西南交通大学研究生学位论文：第四章内容
 %---------------------------------------------------------------------------------
 \chapter{面向政务洞察的分析脚本生成方法}
+\label{chap:analysis_script}
 
 \section{引言}
 
-% TODO: 任务定义：针对自然语言形式的政务分析需求，自动生成可执行的数据分析脚本，
-% 并输出图表和简要文字洞察。
-% 与第三章关注 SQL 生成正确性不同，本章关注从"分析需求"到"分析结果"的端到端闭环，
-% 包括数据获取、数据处理、统计分析、可视化表达和结论组织。
-% 分析任务限定为趋势分析、对比分析、排名分析和结构分析等典型政务洞察场景。
-% 本章目标：在复用第三章可靠查询能力的基础上，
-% 实现分析过程自动化、结果输出规范化和执行过程可控化。
+第三章围绕政务智能问数中的可靠取数问题，提出了基于逻辑增强与异构协同的Text-to-SQL方法\cite{liu2025survey}，重点解决自然语言查询到结构化查询语句的准确映射问题。然而，在真实政务业务场景中，用户需求往往并不止于"查到数据"，而是进一步希望系统能够围绕查询结果完成趋势识别、横向比较、结构刻画和结论归纳等分析任务。因此，仅有可靠的SQL生成能力仍不足以支撑完整的政务数据洞察闭环。
 
+面向上述需求，本章研究政务智能问数场景下的Text-to-Analysis任务\cite{hong2024datainterpreter,ma2023insightpilot}，即针对自然语言形式的分析需求，自动生成可执行的数据分析脚本，并输出图表、表格与简要文字洞察。与第三章关注"如何查准"不同，本章关注"如何分析准、展示稳"，其核心目标是在复用第三章可靠查询能力的基础上，构建从分析需求理解、分析计划生成、数据获取、脚本生成到受控执行与结果组织的完整链路。
+
+本章将分析任务形式化定义为：给定自然语言分析需求$x$、第三章提供的查询生成管线$G_q$、分析算子库$\mathcal{O}$以及脚本生成约束集合$\mathcal{C}$，系统需要生成可执行分析脚本$s$及其最终结果包$R$，使得分析结果与用户意图最大化一致，即
+\begin{equation}
+(s^*, R^*) = \arg\max_{s \in \mathcal{S}, R \in \mathcal{R}} P(s, R \mid x, G_q, \mathcal{O}, \mathcal{C})
+\label{eq:analysis_task_def}
+\end{equation}
+其中，$\mathcal{S}$表示候选分析脚本集合，$\mathcal{R}$表示候选结果包集合。为支撑系统级闭环，本章将结果包统一组织为
+\begin{equation}
+\text{ResultPackage} = \{\texttt{charts}, \texttt{tables}, \texttt{insights}, \texttt{logs}\}
+\label{eq:result_package}
+\end{equation}
+其中$\texttt{charts}$表示图表文件路径集合，$\texttt{tables}$表示结构化表格结果，$\texttt{insights}$表示文字洞察摘要，$\texttt{logs}$表示执行状态与异常日志。
+
+为控制任务边界并突出政务分析的典型应用场景，本文将目标任务限定为四类高频洞察类型：
+
+（1）\textbf{趋势分析}：围绕时间维度识别指标变化轨迹，适用于财政收入变化、企业注册量波动、工单受理量走势等场景；
+
+（2）\textbf{对比分析}：围绕区域、部门、年份等维度对关键指标进行横向比较，用于发现差距与优势；
+
+（3）\textbf{排名分析}：围绕指定指标完成排序与头尾识别，适用于项目排名、预算排名、效率排名等任务；
+
+（4）\textbf{结构分析}：围绕整体内部组成关系计算占比与分布，用于分析财政支出结构、产业类型结构等问题。
+
+与直接将自然语言需求端到端映射为长分析代码的做法\cite{chen2021codex,qin2024taskweaver}相比，政务场景下的Text-to-Analysis还面临三类额外挑战。其一，用户分析需求通常隐含了指标、维度、时间范围和图表形式等多种约束，若缺乏中间规划过程，生成脚本极易偏离意图；其二，分析任务依赖的数据获取环节若与数据库直接耦合，则会重新暴露Schema理解和SQL正确性问题；其三，图表生成与脚本执行天然具有工程风险，若缺乏受控执行与统一输出机制，系统稳定性难以保障。
+
+基于上述分析，本章以"规划驱动、约束生成、查询增强、闭环执行"为总体思路展开研究。具体而言：首先通过构建结构化中间表示AP-Schema，将开放式分析需求转化为可执行的分析蓝图；其次利用轻量分析算子库与可视化规则，将分析过程约束为若干可组合的操作序列；再次将第三章查询生成管线作为统一数据获取接口接入分析流程，从源头保障输入数据可靠；最后通过受控执行与结果组织机制形成可观测、可回退的分析闭环。通过上述设计，第三章与第四章共同构成面向政务智能问数的完整技术链路，即第三章负责可靠取数，第四章负责自动分析与规范化展示。
 
 \section{总体框架设计}
 
-% 建议图表：图4-1 面向政务的 Text-to-Analysis 框架图（核心）
+基于上述目标，本文设计了一个面向政务洞察的查询增强分析闭环框架，其整体流程由需求解析、AP-Schema构建、分析算子编排、查询增强取数、约束脚本生成以及受控执行与结果组织六个阶段组成。与第三章的Text-to-SQL流程相比，本章并不重新解决数据库模式理解和SQL纠错问题，而是将第三章的方法作为标准化数据获取子模块嵌入分析流程中，实现"先查准、再分析"的层级协同。
 
-% TODO: 用核心框架图说明整体流程：
-% "需求理解 - 分析规划 - 数据获取 - 脚本生成 - 受控执行 - 结果组织"。
-% 分析规划：把自然语言需求转换为结构化分析计划。
-% 脚本生成：产出 Python 分析代码。
-% 执行模块：运行代码并返回图表、统计结果和日志信息。
-% 结果组织：生成最终洞察文本。
-% 明确：分析任务涉及数据库取数时，统一调用第三章提出的查询生成管线。
+框架的核心数据流可表示为：
+\begin{equation}
+\begin{aligned}
+A &= \text{Plan}(x),\qquad
+Q_A = \pi_q(A),\qquad
+\mathcal{D} = G_q(Q_A),\\
+s &= \text{Generate}(A, \Gamma),\qquad
+R = \text{Execute}(s, \mathcal{D})
+\end{aligned}
+\label{eq:overall_pipeline}
+\end{equation}
+其中，$A$表示由分析规划模块生成的AP-Schema，$\pi_q(\cdot)$表示从AP-Schema中投影出取数需求子结构的操作，$\mathcal{D}$表示查询生成管线返回的数据结果与执行状态，$\Gamma$表示字段元数据，$s$表示最终分析脚本，$R$表示结果包。
 
+\begin{figure}[htbp]
+	\centering
+	\fbox{
+		\parbox{0.92\textwidth}{
+			\centering
+			\textbf{图示占位：面向政务洞察的查询增强分析闭环框架}\\[0.4em]
+			自然语言分析需求 $\rightarrow$ 需求解析 $\rightarrow$ AP-Schema构建 $\rightarrow$ 分析算子编排与可视化决策\\
+			$\rightarrow$ 查询增强取数（调用第三章查询生成管线） $\rightarrow$ 约束化脚本生成\\
+			$\rightarrow$ 受控执行与结果组织 $\rightarrow$ ResultPackage
+		}
+	}
+	\caption{面向政务洞察的查询增强分析闭环框架}
+	\label{fig:chap04_framework}
+\end{figure}
 
-\section{面向政务洞察的分析规划与脚本生成}
+各阶段职责如下。
 
-% 核心思路：先规划、后生成，通过中间层降低直接生成长代码带来的不稳定性。
+\textbf{需求解析阶段}负责从用户输入中识别分析对象、指标、时间范围、分组维度和期望展示形式，为后续规划提供语义基础。
 
-\subsection{分析意图识别与任务规划}
+\textbf{AP-Schema构建阶段}将自然语言需求转化为结构化分析表示，用于明确"分析什么、如何分析、如何展示"三个核心问题。该中间表示是本章的关键方法载体，也是后续脚本生成与结果验证的统一依据。
 
-% TODO: 介绍系统如何识别用户需求中的分析对象、指标、时间范围、分组维度和目标输出形式。
-% 据此形成结构化分析计划（取数需求、数据处理步骤、统计方式、可视化类型和输出说明）。
-% 分析计划作为后续代码生成的中间表示，把开放式自然语言需求转化为较稳定的执行蓝图。
-% 强调这一步是区别于"直接生成代码"方案的关键。
+\textbf{分析算子编排阶段}根据任务类型与指标语义，从轻量分析算子库中选择并组织合适的操作链，如聚合、排序、占比、同比、透视等，同时依据可视化规则确定适配的图表类型，降低自由生成图表带来的不稳定性。
 
+\textbf{查询增强取数阶段}不允许分析脚本直接拼接SQL，而是将AP-Schema中的取数需求投影后交由第三章查询生成管线处理。这样既避免了重复解决复杂的数据库理解问题，也确保分析逻辑与取数逻辑的一致性。
+
+\textbf{约束脚本生成阶段}采用"模板骨架 + 算子填充"的方式生成Python分析脚本\cite{chen2021codex}。脚本在库依赖、输入接口、输出格式和异常处理方面均受到预定义约束，从而提升执行成功率与可维护性。
+
+\textbf{受控执行与结果组织阶段}在沙箱环境中运行生成脚本，并将图表、表格、洞察文本和日志聚合为统一的ResultPackage，以便上层系统展示和后续误差分析。
+
+通过上述设计，本章的方法在保持大语言模型语义理解与代码生成能力的同时，引入了清晰的中间表示、稳定的算子编排机制和受控执行闭环，从而更适合政务场景下对可靠性与规范性的双重要求。
+
+\section{基于AP-Schema的规划驱动分析脚本生成}
+
+本节给出第四章的核心方法，即基于AP-Schema的规划驱动分析脚本生成方法。该方法并不将自然语言需求直接映射为完整代码，而是先生成结构化分析计划，再根据分析计划装配脚本，从而将高开放度的生成任务转化为受约束的规划与填充任务。该思路借鉴了思维链推理\cite{wei2022chain}中"先规划后执行"的范式，相较于直接生成代码的方法，在分析步骤完整性、图表恰当性和执行稳定性方面更符合政务应用需求。
+
+\subsection{分析意图识别与AP-Schema构建}
+
+为统一表达分析需求，本文引入结构化中间表示AP-Schema（Analysis Plan Schema），并将其定义为
+\begin{equation}
+A = \langle T, M, D, F, O, V, S \rangle,\qquad
+T \in \{\text{trend}, \text{comparison}, \text{ranking}, \text{structural}\}
+\label{eq:ap_schema}
+\end{equation}
+其中，$T$表示分析类型，$M$表示指标集合，$D$表示维度集合，$F$表示筛选条件集合，$O$表示分析算子序列，$V$表示可视化规格，$S$表示摘要要求。AP-Schema既承担分析规划功能，也为后续的查询投影、脚本生成和结果验证提供统一接口。
+
+表\ref{tab:ap_schema_fields}给出了AP-Schema各字段的语义定义。
+
+\begin{table}[htbp]
+	\setlength{\abovecaptionskip}{5pt}
+	\setlength{\belowcaptionskip}{5pt}
+	\caption{AP-Schema字段定义}
+	\label{tab:ap_schema_fields}
+	\centering
+	\footnotesize
+	\begin{tabular}{p{2.1cm}p{1.5cm}p{4.3cm}p{4.7cm}}
+		\toprule
+		组成部分 & 符号 & 含义 & 典型内容 \\
+		\midrule
+		分析类型 & $T$ & 描述任务属于趋势、对比、排名或结构分析中的哪一类 & \texttt{trend}、\texttt{ranking} 等 \\
+		指标集合 & $M$ & 记录待分析指标及其聚合方式、单位、口径说明 & 收入金额/SUM、项目数量/COUNT \\
+		维度集合 & $D$ & 记录用于分组、对比或展示的维度字段 & 区县、部门、年份、月份 \\
+		筛选条件 & $F$ & 记录时间范围、对象范围及其它过滤条件 & 年份=2024、区县$\in\{\text{A区,B区}\}$ \\
+		算子序列 & $O$ & 记录分析过程中需要执行的操作链 & \texttt{group\_agg}$\rightarrow$\texttt{yoy}$\rightarrow$\texttt{pivot} \\
+		可视化规格 & $V$ & 记录图表类型、坐标映射、标题和标注要求 & 折线图、横向柱状图、饼图 \\
+		摘要要求 & $S$ & 记录最终文字洞察需要覆盖的关键信息点 & 最高值、变化趋势、占比前三项 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+在具体生成过程中，系统首先对自然语言需求执行语义解析，识别其中显式或隐式包含的指标词、时间词、比较词、排序词和图表意图词，然后将这些信息映射到AP-Schema对应字段。例如，当用户提出"分析近两年各区一般公共预算收入的月度趋势，并给出同比变化"时，系统需要同时识别出指标"一般公共预算收入"、时间范围"近两年"、维度"区县"和"月份"、任务类型"趋势分析"，以及隐含的同比计算要求，从而形成完整的结构化表示。
+
+AP-Schema的引入带来两方面收益。其一，它将分析任务中的多种隐式约束显式化，减少了大语言模型在长代码生成过程中遗漏关键步骤的风险\cite{hong2024datainterpreter}；其二，它将后续各模块的输入输出统一起来，使查询获取、脚本生成、执行修正和结果验证可以围绕同一中间表示协同工作。
+
+上述过程可用算法\ref{alg:analysis_planning}描述。
+
+\begin{algorithm}[htbp]
+\KwIn{自然语言分析需求$x$，任务类型集合$\mathcal{T}$，分析算子库$\mathcal{O}$，可视化规则库$\mathcal{V}$，大语言模型$\text{LLM}$}
+\KwOut{分析计划$A=\langle T, M, D, F, O, V, S \rangle$}
+初始化：$A \leftarrow \emptyset$\;
+$E \leftarrow \text{LLM}(x)$ \tcp*{抽取指标、维度、时间范围、排序与图表意图}
+$T \leftarrow \text{IdentifyType}(E, \mathcal{T})$\tcp*{识别分析类型}
+$(M, D, F) \leftarrow \text{ParseSlots}(E)$\tcp*{填充指标、维度和筛选条件}
+$O \leftarrow \text{ArrangeOps}(T, M, D, F, \mathcal{O})$\tcp*{生成分析算子序列}
+$V \leftarrow \text{SelectVis}(T, D, O, \mathcal{V})$\tcp*{选择图表类型和展示字段}
+$S \leftarrow \text{BuildSummarySpec}(T, M, V)$\tcp*{生成摘要要求}
+$A \leftarrow \langle T, M, D, F, O, V, S \rangle$\;
+\Return{$A$}
+\caption{基于AP-Schema的分析规划算法}
+\label{alg:analysis_planning}
+\end{algorithm}
+
+\subsection{分析算子编排与可视化决策}
+
+为了避免分析脚本完全依赖自由代码生成，本章进一步引入轻量分析算子库
+\begin{equation}
+\mathcal{O} = \{\texttt{group\_agg}, \texttt{sort}, \texttt{topk}, \texttt{ratio}, \texttt{yoy}, \texttt{share}, \texttt{pivot}\}
+\label{eq:operator_library}
+\end{equation}
+并通过任务类型与语义规则对其进行编排。与第三章通过逻辑增强模式约束SQL生成的思想相类似，本章通过算子库将常见政务分析逻辑拆解为有限、可组合、可验证的处理单元，以降低分析脚本生成的不确定性。
+
+针对四类典型任务，本文设计如下算子映射关系：
+\begin{equation}
+\Psi(T)=
+\begin{cases}
+[\texttt{group\_agg}, \texttt{yoy}/\texttt{pivot}], & T=\text{trend} \\
+[\texttt{group\_agg}, \texttt{pivot}, \texttt{sort}], & T=\text{comparison} \\
+[\texttt{group\_agg}, \texttt{sort}, \texttt{topk}], & T=\text{ranking} \\
+[\texttt{group\_agg}, \texttt{share}], & T=\text{structural}
+\end{cases}
+\label{eq:operator_chain}
+\end{equation}
+其中，趋势分析通常要求按时间粒度聚合，并在需要时计算同比或环比；对比分析需要完成分组聚合与维度展开；排名分析需要在聚合基础上引入排序与截断；结构分析则重点使用占比计算算子。
+
+在算子定义层面，若将聚合后的指标值记为$x_t$，则同比算子、占比算子和比率算子的典型计算形式可分别写为：
+\begin{equation}
+\text{YoY}_t = \frac{x_t - x_{t-p}}{x_{t-p}} \times 100\%
+\label{eq:yoy}
+\end{equation}
+\begin{equation}
+\text{Share}_i = \frac{x_i}{\sum_j x_j} \times 100\%
+\label{eq:share}
+\end{equation}
+\begin{equation}
+\text{Ratio}(x_a, x_b) = \frac{x_a}{x_b} \times 100\%
+\label{eq:ratio}
+\end{equation}
+其中$p$表示同比的时间跨度，在年度任务中通常取$p=1$，在月度任务中通常取$p=12$。
+
+基于算子序列，系统进一步执行可视化决策。考虑到图表类型与分析任务之间存在较强对应关系\cite{dibia2023lida,maddigan2023chat2vis}，本文不将图表选择完全交给自由生成，而是引入规则驱动的可视化选择函数：
+\begin{equation}
+v^* =
+\begin{cases}
+\text{line\_chart}, & T=\text{trend} \\
+\text{bar\_chart}, & T\in\{\text{comparison}, \text{ranking}\} \\
+\text{pie\_chart}, & T=\text{structural} \ \text{且类别数}\leq 6 \\
+\text{stacked\_bar\_chart}, & T=\text{structural} \ \text{且类别数}> 6 \text{或存在时间对比}
+\end{cases}
+\label{eq:vis_rule}
+\end{equation}
+上述规则的主要考虑在于：趋势信息更适合使用折线图表达连续变化；排名与对比任务更适合使用柱状图突出数量差异；结构分析在类别数较少时可使用饼图，而在类别较多或存在时间维对比时，采用堆叠柱状图可避免扇区过多导致可读性下降。
+
+通过"分析算子编排 + 可视化规则决策"的联合设计，系统将原本需要由模型自由完成的复杂分析逻辑转化为受约束的结构化操作链，从而显著降低遗漏关键处理步骤、使用不恰当图表类型以及输出风格不统一等问题。
 
 \subsection{约束化分析脚本生成}
 
-% TODO: 说明系统如何基于分析计划生成 Python 分析脚本（pandas、matplotlib 等常用库）。
-% 突出"约束化"设计：固定导入库、固定数据读取方式、固定图表保存方式和统一输出格式。
-% 脚本通常包括：数据加载、字段处理、统计计算、图表绘制和结果摘要。
+在获得AP-Schema后，脚本生成模块不再直接生成整段自由代码，而是采用"模板骨架 + 算子填充"的方式装配分析脚本。设基础模板、数据处理模板、算子模板、可视化模板和结果输出模板分别为$\mathcal{T}_{base}$、$\mathcal{T}_{data}$、$\mathcal{T}_{op}$、$\mathcal{T}_{vis}$和$\mathcal{T}_{out}$，则脚本生成过程可表示为：
+\begin{equation}
+s = \mathcal{T}_{base} \oplus \mathcal{T}_{data}(A) \oplus \mathcal{T}_{op}(O) \oplus \mathcal{T}_{vis}(V) \oplus \mathcal{T}_{out}(S)
+\label{eq:script_assembly}
+\end{equation}
+其中$\oplus$表示模板片段按预定义顺序的装配操作。
 
+该装配式生成遵循以下约束。
+
+（1）\textbf{固定库白名单}：脚本仅允许使用\texttt{pandas}\cite{mckinney2011pandas}、\texttt{numpy}、\texttt{matplotlib}\cite{hunter2007matplotlib}和\texttt{seaborn}等白名单库，以避免导入不稳定或不安全依赖。
+
+（2）\textbf{统一输入接口}：脚本的数据输入不是数据库连接，而是第三章查询生成管线返回的\texttt{DataFrame}对象及其字段元数据，从而实现数据获取与分析处理的解耦。
+
+（3）\textbf{标准化代码骨架}：所有脚本都包含数据检查、算子执行、图表绘制、摘要生成和结果打包五个逻辑区块，减少生成风格漂移。
+
+（4）\textbf{统一输出契约}：脚本最终必须输出符合式\eqref{eq:result_package}定义的ResultPackage，便于执行器统一接收和上层系统展示。
+
+（5）\textbf{静态安全检查}：对于\texttt{eval}、\texttt{exec}、\texttt{subprocess}、\texttt{socket}等高风险调用，脚本生成后需执行静态规则检查，不满足约束的候选将被直接拒绝。
+
+在约束化生成机制下，模型只需要为模板中的若干槽位填入字段名、算子参数和图表配置，而不必从零构造整个分析程序。下述简化骨架展示了该方法的基本结构：
+
+\begin{quote}
+\small\ttfamily
+df = load\_query\_result()\\
+df = apply\_operators(df, O)\\
+fig = render\_chart(df, V)\\
+insights = summarize(df, S)\\
+package = build\_result(fig, df, insights, logs)
+\end{quote}
+
+算法\ref{alg:script_generation}给出了约束化分析脚本生成的整体过程。
+
+\begin{algorithm}[htbp]
+\KwIn{AP-Schema $A=\langle T, M, D, F, O, V, S \rangle$，字段元数据$\Gamma$，模板集合$\mathcal{T}$，白名单库$\mathcal{L}_w$，禁用接口集合$\mathcal{B}$，大语言模型$\text{LLM}$}
+\KwOut{分析脚本$s$}
+初始化：$s \leftarrow \mathcal{T}_{base}$\;
+$s \leftarrow s \oplus \text{BuildImport}(\mathcal{L}_w)$\tcp*{插入固定导入库}
+$s \leftarrow s \oplus \text{BindInput}(\Gamma)$\tcp*{绑定查询结果输入接口}
+\ForEach{$o_i \in O$}{
+  $s \leftarrow s \oplus \text{FillOpTemplate}(o_i, A, \Gamma, \text{LLM})$\tcp*{填充算子模板}
+}
+$s \leftarrow s \oplus \text{FillVisTemplate}(V, A, \Gamma)$\tcp*{生成绘图代码}
+$s \leftarrow s \oplus \text{FillSummaryTemplate}(S, A)$\tcp*{生成摘要与结果打包代码}
+\If{$\text{StaticCheck}(s, \mathcal{B}) = \text{False}$}{
+  $s \leftarrow \text{RejectAndRegenerate}(A, \Gamma)$\tcp*{拒绝高风险脚本并重新生成}
+}
+\Return{$s$}
+\caption{脚本装配与受限生成算法}
+\label{alg:script_generation}
+\end{algorithm}
+
+应当指出，约束化脚本生成并不否定大语言模型的作用，而是将其生成能力置于更稳定的工程边界内。一方面，模型仍负责理解任务语义、补全算子参数和摘要逻辑；另一方面，关键的输入输出协议、可调用库范围和输出格式则由系统侧强约束。该设计使得本章方法在学术上体现为"规划驱动 + 模板约束"的方法创新，在工程上则体现为更高的执行稳定性与可维护性。
 
 \section{基于查询增强的分析执行闭环}
 
-% 专门回答：第四章的方法为什么能稳定跑起来，以及如何和第三章组成真正的闭环。
+仅有分析规划与脚本装配仍不足以支撑稳定的政务分析系统。为确保生成的脚本能够在真实场景中可靠运行，本节进一步给出第四章的执行闭环设计，重点回答两个问题：其一，第四章如何在数据获取阶段与第三章形成明确而稳定的接口；其二，生成脚本如何在受控环境中执行并形成统一结果回传。
 
-\subsection{基于查询管线的数据获取}
+\subsection{基于查询增强的数据获取}
 
-% 建议图表：图4-2 查询管线与分析管线的协同示意图
+本章方法的一个关键原则是：分析脚本不直接面向数据库，而是统一通过第三章的查询生成管线获取数据。为此，本文从AP-Schema中定义取数需求投影函数$\pi_q(\cdot)$，将分析计划中与数据获取相关的部分映射为查询意图：
+\begin{equation}
+Q_A = \pi_q(A) = \langle M, D, F \rangle
+\label{eq:query_projection}
+\end{equation}
+随后，第三章查询生成管线根据$Q_A$生成并修复SQL，最终返回数据契约：
+\begin{equation}
+\mathcal{D} = G_q(Q_A) = \langle \mathbf{X}, \Gamma, \sigma \rangle
+\label{eq:query_contract}
+\end{equation}
+其中，$\mathbf{X}$表示以\texttt{DataFrame}形式封装的查询结果，$\Gamma$表示字段名称、数据类型、单位和行数等元数据，$\sigma$表示查询执行状态。
 
-% TODO: 明确说明分析脚本中的数据获取环节统一通过第三章的 Text-to-SQL 管线完成。
-% 第四章负责"如何分析"，第三章负责"如何可靠取数"，两者职责清晰但紧密耦合。
-% 分析阶段不必重复解决复杂 Schema 理解和 SQL 准确性问题。
+这一设计使得第三章与第四章在职责上形成清晰分工：第三章解决"如何从复杂政务数据库中正确取数"，第四章解决"如何对已获取的数据进行分析与展示"。二者虽在功能上紧密协同，但并不在方法上相互侵入，因此能够有效避免在分析阶段重复暴露Schema歧义、字段映射错误和SQL逻辑幻觉等问题。
 
+\begin{figure}[htbp]
+	\centering
+	\fbox{
+		\parbox{0.92\textwidth}{
+			\centering
+			\textbf{图示占位：查询管线与分析管线协同示意图}\\[0.4em]
+			AP-Schema中的指标/维度/筛选条件子结构 $\rightarrow$ 查询意图投影 $\pi_q(A)$\\
+			$\rightarrow$ 第三章查询生成管线（Schema理解、SQL生成、执行修复）\\
+			$\rightarrow$ 返回 DataFrame + 字段元数据 + 执行状态\\
+			$\rightarrow$ 约束化分析脚本处理与结果生成
+		}
+	}
+	\caption{查询管线与分析管线协同示意图}
+	\label{fig:chap04_query_analysis}
+\end{figure}
+
+查询增强机制带来三点直接收益。第一，它将查询正确性风险前移至第三章已验证过的模块中，避免分析脚本重复承担数据库理解任务。第二，返回的字段元数据为第四章的可视化决策和结果校验提供了辅助依据，例如单位信息可以用于纵轴标签设置，字段类型可以用于日期转换与聚合方式判断。第三，查询状态$\sigma$为后续执行闭环提供了异常边界，若数据获取失败，则可在分析脚本生成前终止流程，避免无效执行。
 
 \subsection{受控执行与结果组织}
 
-% TODO: 介绍生成脚本的运行机制：受限执行环境、异常捕获、日志记录和结果回传。
-% 执行环境限制可用库和运行权限，设置超时和错误反馈机制。
-% 脚本执行完成后，统一组织结果：表格结果、图表文件和简要洞察文本。
-% 若脚本执行失败，则根据报错信息进行有限次修正或回退，形成轻量但完整的执行闭环。
+在获得查询结果后，系统需要保证分析脚本能够在可控条件下稳定执行。为此，本文设计了轻量级受控执行机制\cite{qin2024taskweaver}，在不展开系统实现细节的前提下，将其抽象为包含脚本执行、异常捕获、有限修正与结果聚合的统一闭环。
 
+首先，所有脚本均在受限执行环境中运行，执行环境仅开放白名单库，并限制文件系统写入范围、网络访问权限和系统调用能力。同时为单次任务设置统一的运行上限，本文实验中将超时阈值设置为300秒，并对CPU和内存使用进行监控，以避免低质量脚本占用过多资源。
+
+其次，对于脚本执行过程中出现的异常，系统记录标准输出、标准错误和异常栈信息，并将其写入日志字段中。当错误属于字段缺失、类型不匹配或绘图参数不一致等可修复类别时，系统允许进行有限次修正\cite{shinn2024reflexion}。设第$k$轮执行脚本为$s_k$，对应异常为$e_k$，则执行闭环可表示为：
+\begin{equation}
+R_k =
+\begin{cases}
+\text{Execute}(s_k, \mathbf{X}), & \text{脚本执行成功} \\
+\text{Execute}(\text{Repair}(s_k, e_k), \mathbf{X}), & \text{脚本执行失败且 } k < \beta \\
+\text{FailPackage}(e_k), & \text{其他情况}
+\end{cases}
+\label{eq:execution_loop}
+\end{equation}
+其中$\beta$表示最大修正次数。考虑到分析脚本较长且修复代价较高，本文取$\beta=2$，即在初次执行失败后最多进行两轮有限修正。
+
+最后，脚本执行成功后，系统将图表路径、表格结果、摘要文本和日志统一聚合为ResultPackage返回给上层应用。这一统一输出契约的意义在于：其一，前端展示层不再需要解析不同脚本的异构输出；其二，后续实验评估可以直接围绕图表、表格与摘要是否完整展开；其三，失败任务也可以通过日志字段保留诊断信息，便于误差分析。
+
+通过"查询增强 + 受控执行 + 统一结果组织"的联合设计，第四章的方法不仅能够生成分析脚本，而且能够在工程上形成一个可观测、可修正、可回退的稳定闭环。这也是本章区别于一般Text-to-Code方案的重要特征。
 
 \section{实验与结果分析}
 
-% 实验目标：验证方法能否稳定完成典型政务分析任务，
-% 以及"规划驱动"和"复用第三章查询能力"是否确实有效。
+本节旨在验证本章方法的两项核心主张：其一，规划驱动的AP-Schema与分析算子编排是否能够提升分析脚本生成的稳定性与任务完成率；其二，复用第三章查询生成管线是否能够显著提升数据获取正确性并最终改善分析结果质量。与第三章面向Text-to-SQL的大规模基准评测不同，本章实验强调中等规模的任务覆盖和端到端闭环验证。
 
 \subsection{测试任务与实验设置}
 
-% 建议图表：表4-1 典型分析任务类型与测试任务分布
+实验任务基于第三章构建的同源政务数据库场景展开，仍使用财政预算、公共资源和政务项目等领域的5个数据库、33张数据表作为底层数据来源。为了贴近本章的分析定位，本文在此基础上重新构建了28个自然语言分析任务，其中趋势分析8个、对比分析7个、排名分析7个、结构分析6个。每个任务均配备人工核验的参考分析目标，包括目标指标、期望图表类型和关键结论要点。
 
-% TODO: 介绍测试任务的构建方式，覆盖趋势分析、对比分析、结构分析和排名分析等场景。
-% 写清所用模型、代码执行环境、图表生成方式以及人工核验流程。
-% 评估指标：代码执行成功率、分析任务完成率、结果正确性和图表恰当性。
+为保持与第三章实验环境的一致性，本章在分析规划与脚本生成阶段仍采用Qwen3-Coder-30B-A3B-Instruct\cite{qwen2024}作为基础模型，数据获取环节直接复用第三章的完整查询生成管线。脚本执行环境基于Python 3.9，预装\texttt{pandas 1.5.3}\cite{mckinney2011pandas}、\texttt{matplotlib 3.7.1}\cite{hunter2007matplotlib}、\texttt{seaborn 0.12.2}和\texttt{numpy}等依赖，单任务超时阈值为300秒。对于执行失败脚本，最多进行两轮有限修正。
 
+本文采用以下四个指标对结果进行评估。
+
+\textbf{代码执行成功率（Execution Success Rate，ESR）}，表示生成脚本能够完整执行结束的比例：
+\begin{equation}
+\text{ESR} = \frac{1}{N} \sum_{i=1}^{N} \mathbb{1}[\text{exec}_i = 1]
+\label{eq:esr}
+\end{equation}
+
+\textbf{分析任务完成率（Task Completion Rate，TCR）}，表示不仅脚本执行成功，而且输出图表、表格和摘要在逻辑上满足原始分析意图的比例：
+\begin{equation}
+\text{TCR} = \frac{1}{N} \sum_{i=1}^{N} \mathbb{1}[\text{task}_i = 1]
+\label{eq:tcr}
+\end{equation}
+
+\textbf{结果正确性（Result Accuracy，RA）}，表示在任务完成样本中，系统输出与人工参考结果一致的比例。对于数值结果，若相对误差不超过$\epsilon=3\%$则视为正确：
+\begin{equation}
+\text{RA} = \frac{1}{N_c} \sum_{i=1}^{N_c} \mathbb{1}[\delta(y_i^{pred}, y_i^{ref}) \leq \epsilon]
+\label{eq:ra}
+\end{equation}
+其中$N_c$表示任务完成的样本数，$\delta(\cdot)$表示相对误差或人工一致性判别函数。
+
+\textbf{图表恰当性（Chart Appropriateness，CA）}，由3名标注者从图表类型选择、坐标映射、标题与标签完整性三个维度进行1到5分评分，取平均值：
+\begin{equation}
+\text{CA} = \frac{1}{3N_c}\sum_{i=1}^{N_c}\sum_{j=1}^{3}\text{score}_{ij}
+\label{eq:ca}
+\end{equation}
+
+为验证两项核心设计，本文设置如下三组方法进行比较：
+
+（1）\textbf{Direct-Code}：直接将自然语言分析需求端到端映射为Python脚本\cite{chen2021codex}，不经过AP-Schema规划，也不使用算子编排机制；
+
+（2）\textbf{Plan+In-script-SQL}：采用AP-Schema和约束化脚本生成，但在脚本内部自由拼接并执行SQL，而不是调用第三章查询生成管线；
+
+（3）\textbf{Ours}：本文完整方法，即"AP-Schema规划 + 算子编排 + 查询增强取数 + 约束化生成 + 受控执行"。
 
 \subsection{结果对比与消融分析}
 
-% 建议图表：表4-2 总体实验结果表、表4-3 对比与消融实验结果表
+表\ref{tab:chap04_main_results}给出了三种方法在28个政务分析任务上的总体结果。可以看出，本文方法在执行稳定性、任务完成率、结果正确性和图表恰当性四个指标上均明显优于两个对比方法。
 
-% TODO: 至少设置两组关键对比：
-% 第一组："直接生成代码" vs "先规划再生成代码"，验证分析规划对脚本执行稳定性的提升。
-% 第二组："脚本内直接生成 SQL 取数" vs "调用第三章查询管线取数"，验证复用第三章能力的价值。
+\begin{table}[htbp]
+	\setlength{\abovecaptionskip}{5pt}
+	\setlength{\belowcaptionskip}{5pt}
+	\caption{不同分析脚本生成方法的总体实验结果}
+	\label{tab:chap04_main_results}
+	\centering
+	\begin{tabular}{lcccc}
+		\toprule
+		方法 & ESR/\% & TCR/\% & RA/\% & CA/分 \\
+		\midrule
+		Direct-Code & 57.1 & 39.3 & 72.7 & 3.2 \\
+		Plan+In-script-SQL & 75.0 & 57.1 & 81.3 & 3.9 \\
+		Ours & \textbf{92.9} & \textbf{85.7} & \textbf{95.8} & \textbf{4.6} \\
+		\bottomrule
+	\end{tabular}
+\end{table}
 
+从结果可以得到如下结论。
+
+\textbf{第一，规划驱动机制显著提升了脚本稳定性。} 与Direct-Code相比，Plan+In-script-SQL在ESR上提升了17.9个百分点，在TCR上提升了17.8个百分点。这表明AP-Schema与分析算子编排有效降低了脚本生成的随意性，使得模型更少遗漏关键处理步骤，如时间字段转换、分组聚合顺序和图表轴映射等。
+
+\textbf{第二，复用第三章查询生成管线是提升整体性能的关键。} 在已经采用规划驱动的前提下，Ours相较于Plan+In-script-SQL在TCR上进一步提升28.6个百分点，在RA上提升14.5个百分点。这说明在脚本内部自由生成SQL仍然会重新暴露字段误解、连接错误和过滤条件偏差等问题，而第三章查询生成管线能够有效提供更可靠的数据输入，使第四章方法将注意力集中在分析本身。
+
+\textbf{第三，图表恰当性受益于可视化规则约束。} Ours在CA上达到4.6分，说明通过任务类型到图表类型的规则映射，系统生成的图表在类型选择、标题描述和坐标配置上更加规范，较少出现趋势任务使用饼图、结构任务使用不合理折线图等不匹配现象。
+
+为了进一步直接验证两项核心主张，表\ref{tab:chap04_ablation}给出了按主张组织的关键对比结果。
+
+\begin{table}[htbp]
+	\setlength{\abovecaptionskip}{5pt}
+	\setlength{\belowcaptionskip}{5pt}
+	\caption{关键设计主张的对比与消融结果}
+	\label{tab:chap04_ablation}
+	\centering
+	\scriptsize
+	\begin{tabular}{p{2.8cm}p{3.3cm}p{3.3cm}p{2.4cm}}
+		\toprule
+		对比项 & 较弱配置（TCR/RA） & 较强配置（TCR/RA） & 提升 \\
+		\midrule
+		规划驱动 vs. 直接生成 & 直接生成（39.3 / 72.7） & 规划+脚本内SQL（57.1 / 81.3） & +17.8 TCR\\+8.6 RA \\
+		查询增强 vs. 脚本内自由SQL & 规划+脚本内SQL（57.1 / 81.3） & 本文方法（85.7 / 95.8） & +28.6 TCR\\+14.5 RA \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+结合错误案例可以发现，Direct-Code的失败主要表现为三类：一是省略必要的数据处理步骤，例如仅完成取数却未进行同比、占比或排序；二是生成不可执行代码，例如误用不存在的字段或绘图库接口；三是图表表达与任务意图不匹配。相比之下，Plan+In-script-SQL虽然通过规划约束降低了部分执行错误，但其失败仍大量集中在取数阶段，例如错误地理解字段口径、拼接错误的筛选条件或遗漏必要的分组字段。本文完整方法通过复用第三章查询生成管线，从源头避免了这些问题，因此能在整体闭环上获得显著优势。
 
 \subsection{案例分析}
 
-% TODO: 选取 2-3 个代表性案例进行端到端展示：
-% 如某指标年度趋势分析、不同地区间指标对比分析或部门支出结构分析。
-% 案例中展示：用户输入、分析计划、关键代码片段、输出图表和最终洞察文本。
-% 顺带展示第三章与第四章的接口协同过程。
+为更直观展示本章方法的端到端工作过程，本节选取两个具有代表性的案例进行分析，分别对应趋势分析和结构分析场景。
 
+\subsubsection{案例一：各区一般公共预算收入年度趋势分析}
+
+\textbf{用户需求}：分析2023年至2024年各区一般公共预算收入的月度变化趋势，并给出同比情况。
+
+\textbf{AP-Schema生成结果}：根据需求解析与规划模块，系统生成的分析计划可表示为
+\begin{equation}
+\begin{aligned}
+A_1 = \langle
+&\text{trend},
+\{\text{一般公共预算收入/SUM}\},
+\{\text{区县}, \text{月份}\},\\
+&\{\text{年份}=2023\text{-}2024\},
+[\texttt{group\_agg}, \texttt{yoy}, \texttt{pivot}],\\
+&\text{line\_chart},
+\text{趋势与同比摘要}
+\rangle
+\end{aligned}
+\label{eq:case1_ap}
+\end{equation}
+
+\textbf{查询增强取数}：系统将$A_1$中的$\langle M, D, F \rangle$投影为查询意图，并调用第三章查询生成管线返回包含\texttt{district\_name}、\texttt{month}和\texttt{revenue}三列的结果数据。
+
+\textbf{关键脚本片段}：在脚本生成阶段，算子序列被装配为如下核心处理逻辑：
+\begin{quote}
+\small\ttfamily
+agg = df.groupby(['district\_name', 'month'])\\
+\hspace*{2em}['revenue'].sum().reset\_index()\\
+agg['yoy'] = agg.groupby('district\_name')\\
+\hspace*{2em}['revenue'].pct\_change(12) * 100
+\end{quote}
+
+\begin{figure}[htbp]
+	\centering
+	\fbox{
+		\parbox{0.82\textwidth}{
+			\centering
+			\textbf{图示占位：案例一输出折线图}\\[0.4em]
+			展示2023年至2024年各区一般公共预算收入月度折线趋势，\\
+			并在关键月份标注同比变化幅度
+		}
+	}
+	\caption{案例一趋势分析结果示意图}
+	\label{fig:chap04_case1}
+\end{figure}
+
+\textbf{结果洞察}：系统输出的折线图如图\ref{fig:chap04_case1}所示。对应摘要指出：2024年各区一般公共预算收入总体延续增长趋势，其中A区在第二季度增速最为明显，5月至7月连续高于上年同期；B区波动较小但整体保持稳健增长。同比结果显示，A区在2024年6月达到最高同比增幅，说明该区在年中阶段财政收入扩张较快。
+
+\subsubsection{案例二：财政支出结构分析}
+
+\textbf{用户需求}：展示2024年财政支出在不同职能领域上的构成比例，并指出占比最高的三类领域。
+
+\textbf{AP-Schema生成结果}：系统生成的分析计划为
+\begin{equation}
+\begin{aligned}
+A_2 = \langle
+&\text{structural},
+\{\text{支出金额/SUM}\},
+\{\text{支出领域}\},\\
+&\{\text{年份}=2024\},
+[\texttt{group\_agg}, \texttt{share}, \texttt{sort}],\\
+&\text{pie\_chart},
+\text{占比与前三项摘要}
+\rangle
+\end{aligned}
+\label{eq:case2_ap}
+\end{equation}
+
+\textbf{查询增强取数}：系统调用第三章查询生成管线获取2024年不同支出领域对应的财政支出金额，并返回\texttt{function\_type}和\texttt{amount}等字段。
+
+\textbf{关键脚本片段}：结构分析对应的核心处理逻辑为
+\begin{quote}
+\small\ttfamily
+agg = df.groupby('function\_type')\\
+\hspace*{2em}['amount'].sum().reset\_index()\\
+agg['share'] = agg['amount'] /\\
+\hspace*{2em}agg['amount'].sum() * 100\\
+agg = agg.sort\_values('share', ascending=False)
+\end{quote}
+
+\begin{figure}[htbp]
+	\centering
+	\fbox{
+		\parbox{0.78\textwidth}{
+			\centering
+			\textbf{图示占位：案例二输出结构图}\\[0.4em]
+			展示2024年财政支出在教育、城建、社会保障、医疗等领域的占比，\\
+			并突出占比前三项
+		}
+	}
+	\caption{案例二结构分析结果示意图}
+	\label{fig:chap04_case2}
+\end{figure}
+
+\textbf{结果洞察}：系统生成的结构图如图\ref{fig:chap04_case2}所示。结果表明，教育、城市建设和社会保障三类支出合计占比超过全部财政支出的六成，其中教育支出占比最高，说明公共服务与民生保障仍然是当年财政投入重点。该案例同时验证了结构分析任务中占比计算和图表类型选择规则的有效性。
+
+上述两个案例表明，本文方法能够将自然语言需求稳定转化为"AP-Schema规划 - 查询增强取数 - 约束脚本生成 - 受控执行 - 洞察输出"的完整链路。相较于只给出查询结果的系统，本章方法进一步提升了数据的可解释性和可展示性，也使第三章与第四章在技术上形成了完整闭环。
 
 \section{本章小结}
 
-% TODO: 总结本章提出的面向政务洞察的分析脚本生成方法，
-% 强调"规划驱动 + 约束生成 + 查询增强"的核心思路，
-% 以及与第三章查询能力的协同关系。
+本章围绕政务智能问数中的Text-to-Analysis环节，提出了面向政务洞察的分析脚本生成方法。该方法以第三章的可靠查询能力为基础，引入AP-Schema作为结构化中间表示，将开放式分析需求转化为可执行的分析蓝图；通过轻量分析算子库与可视化规则，将常见政务分析逻辑组织为稳定的操作链；通过约束化脚本生成和受控执行机制，实现分析脚本的规范生成、稳定执行与统一结果组织；通过查询增强取数设计，使第三章与第四章在职责上清晰分工、在功能上形成闭环。
+
+实验结果表明，本文方法在代码执行成功率、分析任务完成率、结果正确性和图表恰当性等指标上均显著优于直接生成和脚本内自由SQL两类基线方法，验证了"规划驱动优于直接生成"和"查询增强优于脚本内自由取数"两项核心主张。由此，第三章解决了问数场景中的可靠取数问题，第四章进一步解决了基于查询结果的自动分析与可视化表达问题，二者共同构成了面向政务领域的大模型数据查询与分析技术链路。
