@@ -28,6 +28,25 @@
 
 结合政务场景中的高频需求，本章将目标任务限定为四类典型分析类型，各类型的核心逻辑与适用场景如表\ref{tab:analysis_types}所示。
 
+\begin{table}[htbp]
+	\setlength{\abovecaptionskip}{5pt}
+	\setlength{\belowcaptionskip}{5pt}
+    
+	\caption{四类典型分析类型及其适用场景}\label{tab:analysis_types}
+	\centering
+	\footnotesize
+    \renewcommand{\arraystretch}{1.4}
+	\begin{tabular}{p{1.5cm}p{4.5cm}p{6.5cm}}
+		\toprule
+		分析类型 & 核心逻辑 & 适用场景 \\
+		\midrule
+		趋势分析 & 沿时间维度追踪指标的变化轨迹与演进规律 & 财政收入增减趋势、企业注册量波动、工单受理量走势等 \\
+		对比分析 & 沿区域、部门、年份等维度对关键指标进行横向比较 & 不同区县经济指标差异、部门绩效对比、年度预算同比等 \\
+		排名分析 & 按指定指标排序并识别头部与尾部对象 & 项目投资额排名、预算执行率排名、办件效率排名等 \\
+		结构分析 & 计算整体内部各组成部分的占比与分布 & 财政支出结构、产业类型分布、收入来源构成等 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
 
 与查询任务相比，面向分析的结果生成面临三类挑战。
 其一，分析需求通常隐含指标、维度、时间粒度、统计口径和展示形式等多重约束，若缺乏中间规划过程，系统容易遗漏关键分析步骤；
@@ -41,83 +60,86 @@
 最后，将输出统一组织为标准化结果包，为后续的系统实现提供清晰的方法基础。
 通过上述设计，数据查询模块与数据分析模块共同构成从可靠取数到规范分析的完整技术链路。
 
-\begin{table}[htbp]
-	\setlength{\abovecaptionskip}{5pt}
-	\setlength{\belowcaptionskip}{5pt}
-    
-	\caption{四类典型分析类型及其适用场景}\label{tab:analysis_types}
-	\centering
-	\footnotesize
-	\begin{tabular}{p{1.5cm}p{4.5cm}p{6.5cm}}
-		\toprule
-		分析类型 & 核心逻辑 & 典型适用场景 \\
-		\midrule
-		趋势分析 & 沿时间维度追踪指标的变化轨迹与演进规律 & 财政收入增减趋势、企业注册量波动、工单受理量走势等 \\
-		对比分析 & 沿区域、部门、年份等维度对关键指标进行横向比较 & 不同区县经济指标差异、部门绩效对比、年度预算同比等 \\
-		排名分析 & 按指定指标排序并识别头部与尾部对象 & 项目投资额排名、预算执行率排名、办件效率排名等 \\
-		结构分析 & 计算整体内部各组成部分的占比与分布 & 财政支出结构、产业类型分布、收入来源构成等 \\
-		\bottomrule
-	\end{tabular}
-\end{table}
-
 
 \section{总体框架设计}
 
-基于上述目标，本文设计了一个面向政务洞察的分析规划与查询增强协同框架。其整体流程由需求解析、AP-Schema构建、查询需求投影、第三章取数、分析算子执行以及结果组织六个阶段组成。与第三章的Text-to-SQL流程相比，本章不再重新研究SQL生成，而是将第三章的方法作为标准化数据获取子模块嵌入分析流程中，实现“先查准、再分析”的层级协同。
+基于上述目标，本文设计了一个面向政务洞察的分析规划与查询增强协同框架。
+其整体流程由需求解析、AP-Schema构建、查询需求投影、取数调用、分析算子执行以及结果组织六个阶段组成。
+与第三章的Text-to-SQL流程相比，本章不再重新研究SQL生成，而是将第三章的方法作为标准化数据获取子模块嵌入分析流程中，实现“先查准、再分析”的层级协同。
+
 
 框架的核心数据流可表示为：
 \begin{equation}
-\begin{aligned}
-A &= \text{Plan}(x, K),\\
-Q_A &= \pi_q(A), \qquad P_A = \pi_a(A),\\
-\mathcal{D} &= G_q(Q_A),\\
-R &= \text{Generate}(P_A, \mathcal{D})
-\end{aligned}
+\begin{cases}
+A = \text{Plan}(x, K),\\
+Q_A = \pi_q(A),\\
+P_A = \pi_a(A),\\
+\mathcal{D} = G_q(Q_A),\\
+R = \text{Generate}(P_A, \mathcal{D})
+\end{cases}
 \label{eq:overall_pipeline}
 \end{equation}
-其中，$A$表示由分析规划模块生成的AP-Schema；$K$表示第三章中构建的领域知识支撑，包括业务术语映射、逻辑指标定义和值域约束；$\pi_q(\cdot)$表示从AP-Schema中投影出取数需求子结构的操作；$\pi_a(\cdot)$表示投影出分析层操作与展示要求的操作；$G_q$表示第三章查询生成管线与数据库执行的组合抽象，即先由第三章方法（算法\ref{alg:schema_linking}至算法\ref{alg:candidate_selection}）生成最优SQL查询$c_f$，再在目标数据库上执行$c_f$并封装返回结果；$\mathcal{D}$表示该管线返回的数据结果、字段元数据与执行状态；$R$表示最终结果包。
+其中，$A$表示由分析规划模块生成的AP-Schema；$K$为第三章中构建的领域知识，包括业务术语映射、逻辑指标定义和值域约束；
+$\pi_q(\cdot)$表示从AP-Schema中投影出取数需求子结构的操作；$\pi_a(\cdot)$表示投影出分析层操作与展示要求的操作；
+$G_q$表示数据查询生成管线与数据库执行的组合抽象，即先由数据查询方法（算法\ref{alg:schema_linking}至算法\ref{alg:candidate_selection}）生成最优SQL查询$c_f$，再在目标数据库上执行$c_f$并封装返回结果；
+$\mathcal{D}$表示该管线返回的数据结果、字段元数据与执行状态；$R$表示最终结果包。
 
 \begin{figure}[htbp]
 	\centering
 	\fbox{
 		\parbox{0.92\textwidth}{
 			\centering
-			\textbf{图示占位：分析规划与查询增强协同框架}\\[0.4em]
+			\textbf{图示占位：分析规划与查询增强协同框架图}\\[0.4em]
 			自然语言分析需求 $\rightarrow$ 需求解析 $\rightarrow$ AP-Schema构建\\
 			$\rightarrow$ 查询需求投影 $\pi_q(A)$ $\rightarrow$ 第三章查询生成管线取数\\
 			$\rightarrow$ 分析层操作投影 $\pi_a(A)$ $\rightarrow$ 分析算子执行与可视化决策\\
 			$\rightarrow$ ResultPackage
 		}
 	}
-	\caption{分析规划与查询增强协同框架}\label{fig:chap04_framework}
+	\caption{分析规划与查询增强协同框架图}\label{fig:chap04_framework}
 \end{figure}
 
-各阶段职责如下。
+% 各阶段职责如下。
 
 \textbf{需求解析阶段}负责从用户输入中识别分析对象、指标、时间范围、分组维度和期望展示形式，为后续规划提供语义基础。
 
 \textbf{AP-Schema构建阶段}将自然语言需求转化为结构化分析表示，用于明确“分析什么”“通过哪些数据分析”“如何展示结果”三个核心问题。该中间表示是本章的关键方法载体，也是连接第三章查询方法与第五章系统实现的重要桥梁。
 
-\textbf{查询需求投影阶段}从AP-Schema中抽取与数据获取相关的指标、维度、过滤条件、时间粒度和查询层操作，并调用第三章的查询生成管线完成可靠取数，从而避免第四章重复承担数据库理解任务。
+\textbf{查询需求投影阶段}从AP-Schema中抽取与数据获取相关的指标、维度、过滤条件、时间粒度和查询层操作，并调用查询生成管线完成可靠取数。
 
 \textbf{分析结果生成阶段}在获取到查询结果后，根据分析类型与任务要求，从轻量分析算子库中选择合适的操作链，对结果数据完成排序、占比、透视、标注等分析处理，并结合可视化规则生成规范化图表与表格。
 
-\textbf{结果组织阶段}将图表、表格、摘要和日志统一封装为ResultPackage，以便后续系统展示、日志记录和误差分析。该阶段只定义输出契约，不展开具体的执行器、服务接口和前后端交互细节，这些内容将在第五章集中讨论。
+\textbf{结果组织阶段}将图表、表格、摘要和日志统一封装为ResultPackage，以便后续系统展示、日志记录和误差分析。
+% 该阶段只定义输出契约，不展开具体的执行器、服务接口和前后端交互细节，这些内容将在第五章集中讨论。
 
-通过上述设计，本章的方法在保持大语言模型语义理解能力的同时，引入了清晰的中间表示、稳定的任务分解机制和规范化的结果生成流程，从而更适合政务场景下对可靠性、规范性与可落地性的综合要求。
+通过上述设计，本章的方法在保持大语言模型语义理解能力的同时，引入了清晰的中间表示、稳定的任务分解机制和规范化的结果生成流程，从而应对政务场景下对可靠性、规范性与可落地性的综合要求。
 
-\section{分析意图识别与AP-Schema构建}
 
-\subsection{AP-Schema定义}
+\section{分析意图识别与结构化分析规划构建}
 
-为统一表达分析需求，本文引入结构化中间表示AP-Schema（Analysis Plan Schema），并将其定义为
+分析规划并非对用户需求的简单转写，而是将分析对象、统计口径、执行边界与展示要求统一编码为可验证的中间表示。
+为此，本节围绕 AP-Schema（Analysis Plan Schema）展开，依次说明其模式定义、字段约束与完备性校验机制，以及从自然语言需求到结构化规划实例的构建过程，从而为后续查询投影与分析算子编排提供统一基础。
+AP-Schema的构建与约束机制过程如图\ref{fig:ap-schema}所示。
+
+\begin{figure}[htbp]
+	\centering
+    % \setlength{\belowcaptionskip}{-12pt}
+	% \includegraphics[width=0.85\textwidth]{test.pdf}
+	\caption{AP-Schema 构建与约束机制图}
+	\label{fig:ap-schema}
+\end{figure}
+
+
+\subsection{分析规划模式定义}\label{subsec:ap_schema_def}
+
+为统一表达分析需求并为后续查询投影与算子编排提供结构化基础，本文引入分析规划模式AP-Schema，并将其定义为：
 \begin{equation}
-A = \langle T, M, D, F, G, O_q, O_a, \hat{V}, S \rangle,\qquad
+A = \langle T, M, D, \hat{F}, G, O_q, O_a, \hat{V}, \hat{S} \rangle,\qquad
 T \in \{\text{trend}, \text{comparison}, \text{ranking}, \text{structural}\}
 \label{eq:ap_schema}
 \end{equation}
-其中，$T$表示分析类型，$M$表示指标集合，$D$表示维度集合，$F$表示筛选条件集合，$G$表示分析粒度，$O_q$表示查询层操作集合，$O_a$表示分析层操作集合，$\hat{V}$表示可视化规格（为与第三章值域约束器$V$区分，此处以$\hat{V}$标记），$S$表示摘要要求。与原始自然语言需求相比，AP-Schema将分析任务中的关键约束显式化，使后续的查询投影、分析算子组织和结果验证能够围绕同一结构化表示协同展开。
-
+其中，$T$表示分析类型，$M$表示目标指标集合，$D$表示维度集合，$\hat{F}$表示筛选条件集合，$G$表示分析粒度，$O_q$表示查询层操作集合，$O_a$表示分析层操作集合，
+$\hat{V}$表示可视化规格，$\hat{S}$表示摘要要求。与原始自然语言需求相比，AP-Schema将分析任务中的关键约束显式化，使后续的查询投影、分析算子组织和结果验证能够围绕同一结构化表示协同展开。
 表\ref{tab:ap_schema_fields}给出了AP-Schema各字段的语义定义。
 
 \begin{table}[htbp]
@@ -126,52 +148,149 @@ T \in \{\text{trend}, \text{comparison}, \text{ranking}, \text{structural}\}
 	\caption{AP-Schema字段定义}\label{tab:ap_schema_fields}
 	\centering
 	\footnotesize
-	\begin{tabular}{p{1.8cm}p{1.3cm}p{4.3cm}p{5.2cm}}
+	\renewcommand{\arraystretch}{1.4}
+	\begin{tabular}{p{2.2cm}cp{4.8cm}p{5.2cm}}
 		\toprule
-		组成部分 & 符号 & 含义 & 典型内容 \\
+		组成部分 & 符号 & 含义 & 典型取值 \\
 		\midrule
-		分析类型 & $T$ & 描述任务属于趋势、对比、排名或结构分析中的哪一类 & \texttt{trend}、\texttt{ranking}等 \\
-		指标集合 & $M$ & 记录待分析指标及其统计口径、聚合方式、单位等信息 & 一般公共预算收入/SUM、项目数量/COUNT \\
-		维度集合 & $D$ & 记录用于分组、对比或展示的维度字段 & 区县、部门、年份、月份 \\
-		筛选条件 & $F$ & 记录时间范围、对象范围及其它过滤条件 & 年份=2024、区县$\in\{\text{A区,B区}\}$ \\
-		分析粒度 & $G$ & 记录分析的时间粒度或统计粒度 & 年度、季度、月度、按部门 \\
-		查询层操作 & $O_q$ & 记录需要在取数阶段完成的口径型或关系型操作 & 同比口径、按年月聚合、跨表关联 \\
-		分析层操作 & $O_a$ & 记录在查询结果上继续执行的展示型或整理型操作 & \texttt{sort}$\rightarrow$\texttt{topk}$\rightarrow$\texttt{annotate} \\
-		可视化规格 & $\hat{V}$ & 记录图表类型、坐标映射、标题和标注要求 & 折线图、横向柱状图、饼图 \\
-		摘要要求 & $S$ & 记录最终文字洞察需要覆盖的关键信息点 & 峰值月份、占比前三项、最大增幅 \\
+		分析类型 & $T$ & 任务所属的分析类别 & \texttt{trend}、\texttt{ranking}等 \\
+		指标集合 & $M$ & 待分析指标及其聚合方式 & 预算收入/SUM、项目数/COUNT \\
+		维度集合 & $D$ & 用于分组或对比的维度字段 & 区县、部门、年份、月份 \\
+		筛选条件 & $\hat{F}$ & 时间范围与对象过滤条件 & 年份=2025、区县$\in$\{A,B\} \\
+		分析粒度 & $G$ & 时间或统计粒度 & 年度、季度、月度 \\
+		查询层操作 & $O_q$ & 取数阶段的口径与关联操作 & 同比口径、跨表关联 \\
+		分析层操作 & $O_a$ & 结果上的展示与整理操作 & \texttt{sort}$\to$\texttt{topk}$\to$\texttt{annotate} \\
+		可视化规格 & $\hat{V}$ & 图表类型与坐标映射要求 & 折线图、柱状图、饼图 \\
+		摘要要求 & $\hat{S}$ & 文字洞察需覆盖的要点 & 峰值月份、占比前三、最大增幅 \\
+		\bottomrule
+	\end{tabular}
+	\renewcommand{\arraystretch}{1.0}
+\end{table}
+
+\subsection{字段约束关系与规划完备性}\label{subsec:ap_schema_valid}
+
+AP-Schema的九个字段并非相互独立，而是存在由分析类型$T$驱动的结构性约束。不同的$T$取值对维度集合$D$、分析粒度$G$和默认可视化类型$\hat{V}$等字段提出了不同的最低要求，从而将后续生成过程约束在合理的决策空间内。
+表\ref{tab:ap_schema_constraints}列出了四类分析类型对关键字段的典型约束。
+
+\begin{table}[htbp]
+	\setlength{\abovecaptionskip}{5pt}
+	\setlength{\belowcaptionskip}{5pt}
+	\caption{分析类型对AP-Schema关键字段的约束}\label{tab:ap_schema_constraints}
+	\centering
+	\footnotesize
+    \renewcommand{\arraystretch}{1.2}
+	\begin{tabular}{p{2.0cm}p{2.4cm}p{2.8cm}p{2.0cm}p{3cm}}
+		\toprule
+		分析类型$T$ & $D$必须包含 & $G$典型取值 & 默认$\hat{V}$ & $O_a$常用算子 \\
+		\midrule
+		趋势分析 & 时间维度 & 月度/季度/年度 & 折线图 & \texttt{sort, annotate} \\
+		对比分析 & $\geq$2个对比对象 & 按对象分组 & 柱状图 & \texttt{pivot, sort} \\
+		排名分析 & 排序维度 & 按维度聚合 & 横向柱状图 & \texttt{sort, topk} \\
+		结构分析 & 分类维度 & 按类别汇总 & 饼图/堆叠柱 & \texttt{share, annotate} \\
 		\bottomrule
 	\end{tabular}
 \end{table}
 
-若采用不区分查询层与分析层操作的简化规划$\langle T, M, D, F, O, \hat{V}, S \rangle$，则系统无法在规划阶段明确哪些操作应交由查询层完成、哪些操作应留在分析层执行。为此，AP-Schema中的$G$、$O_q$和$O_a$三个字段具有关键意义。首先，$G$使系统能够区分“按年分析”和“按月分析”等不同统计粒度，避免后续取数和展示粒度不一致；其次，$O_q$明确标识哪些业务逻辑属于查询层，例如同比增长率、预算执行率、复杂跨表汇总等，这些操作应由第三章统一完成；最后，$O_a$则约束只在查询结果上执行的轻量分析操作，如排序、占比、透视和重点标注，从而使第四章保持清晰的方法边界。
+这些约束在规划生成阶段起到完备性校验的作用。例如，若系统识别出$T=\text{trend}$却未在$D$中包含时间维度，则规划应视为不完备并触发补全；
+若识别出$T=\text{structural}$却未发现任何分类维度字段，系统需要回溯至意图识别阶段重新提取维度信息。本文将该校验形式化为：
+\begin{equation}
+\text{Valid}(A) = \bigwedge_{c_i \in \mathcal{C}} c_i(A)
+\label{eq:ap_valid}
+\end{equation}
+其中，$\mathcal{C}$表示由表\ref{tab:ap_schema_constraints}推导的约束规则集合。当$\text{Valid}(A)$不成立时，系统将尝试从用户输入中二次抽取缺失信息或使用领域知识推断默认值。
 
-\subsection{分析意图识别与规划生成}
+若采用不区分查询层与分析层操作的简化规划$\langle T, M, D, \hat{F}, O, \hat{V}, \hat{S} \rangle$，
+则系统无法在规划阶段明确哪些操作应交由查询层完成、哪些操作应留在分析层执行。
 
-在具体构建过程中，系统首先对自然语言分析需求执行语义解析，识别其中显式或隐式包含的指标词、时间词、比较词、排序词和图表意图词；随后结合第三章构建的领域知识库$K=\{B, L, V\}$（见表\ref{tab:schema_comparison}）进行语义归一，避免第四章重新建立一套独立的领域语义体系。例如，当用户提出“分析近两年各区一般公共预算收入的月度趋势，并给出同比变化”时，系统需要同时识别指标“一般公共预算收入”、时间范围“近两年”、维度“区县”、分析粒度“月度”以及“同比变化”这一业务口径要求。其中，“同比变化”应优先映射为查询层逻辑指标，而不是留到分析层再进行自由计算。
+为此，AP-Schema中的$G$、$O_q$和$O_a$三个字段具有关键意义。首先，$G$使系统能够区分“按年分析”和“按月分析”等不同统计粒度，避免后续取数和展示粒度不一致；
+其次，$O_q$明确标识哪些业务逻辑属于查询层，例如同比增长率、预算执行率、复杂跨表汇总等，这些操作应由第三章统一完成；
+最后，$O_a$则约束只在查询结果上执行的轻量分析操作，如排序、占比、透视和重点标注，从而使本章保持清晰的方法边界。
 
-这一过程可表述为：
+\subsection{分析意图识别与规划生成}\label{subsec:ap_schema_build}
+
+AP-Schema的构建过程本质上是从开放式自然语言分析需求到结构化规划表示的语义映射。
+该映射依次经过意图识别、槽位填充、操作分解与规格初始化四个子步骤，各步骤逐层完成对分析需求的结构化。
+
+\textbf{意图识别}阶段负责确定分析类型$T$。系统通过大语言模型对用户输入执行语义解析，识别其中显式或隐式包含的分析意图线索，
+包括趋势词（"变化""走势""波动"）、
+比较词（"对比""差距""哪个更高"）、
+排序词（"排名""前三""最多"）和结构词（"占比""构成""分布"）。
+当输入中同时包含多类意图线索时，系统采用优先级规则进行消歧：若同时出现时间变化语义和对比语义，则优先判定为趋势分析（$T=\text{trend}$），因为对比通常是趋势分析的附属展示而非独立任务。
+
+\textbf{槽位填充}阶段负责从用户输入中提取$M$、$D$、$\hat{F}$、$G$四个核心字段。
+该阶段结合第三章构建的领域知识库$K=\{B, L, V\}$进行语义归一。
+具体而言，指标词通过业务术语映射$B$归一为标准字段名及其聚合方式；
+时间范围和对象范围通过值域约束$V$确认取值合法性；
+分析粒度$G$根据时间词和分析类型联合推断。例如，当用户提出“分析近两年各区一般公共预算收入的月度趋势”时，“一般公共预算收入”通过$B$归一为物理字段\texttt{ybsr}及其聚合方式\texttt{SUM}，
+“近两年”通过$V$映射为\texttt{年份$\in$\{2024, 2025\}}，“月度”确定$G=\text{month}$。
+
+\textbf{操作分解}阶段负责将用户需求中涉及的操作划分为查询层操作$O_q$与分析层操作$O_a$。其判断依据是：凡依赖数据库模式理解或改变统计口径的操作归入$O_q$，凡仅对已获取结果进行重组或展示的操作归入$O_a$。例如，上述需求中“并给出同比变化”涉及逻辑计算器$L$中预定义的跨年度计算公式，应映射为查询层逻辑指标（$O_q = \{\text{同月同比口径}\}$），而非在分析层进行自由计算。
+
+\textbf{规格初始化}阶段根据已确定的$T$、$D$、$G$以及可视化规则库$\mathcal{V}$生成初始可视化规格$\hat{V}$和摘要要求$\hat{S}$。此阶段利用表\ref{tab:ap_schema_constraints}中的默认映射关系确定初始图表类型，并根据指标数量和维度数量调整坐标轴分配与标题内容。
+
+上述映射过程可统一表述为：
 \begin{equation}
 A = \text{BuildPlan}(x, K), \qquad K = \{B, L, V\}
 \label{eq:build_plan}
 \end{equation}
-其中，$K$表示第三章提供的领域知识支撑。AP-Schema的生成过程如算法\ref{alg:analysis_planning}所示。
+AP-Schema的完整生成流程如算法\ref{alg:analysis_planning}所示。
 
 \begin{algorithm}[htbp]
-\KwIn{自然语言分析需求$x$，任务类型集合$\mathcal{T}$，领域知识$K=\{B, L, V\}$，分析算子库$\mathcal{O}_a$，可视化规则库$\mathcal{V}$，大语言模型$\text{LLM}$}
-\KwOut{分析计划$A=\langle T, M, D, F, G, O_q, O_a, \hat{V}, S \rangle$}
-初始化：$A \leftarrow \emptyset$\;
-$E \leftarrow \text{LLM}(x, K)$ \tcp*{抽取指标、维度、时间范围、粒度与展示意图}
-$T \leftarrow \text{IdentifyType}(E, \mathcal{T})$\tcp*{识别分析类型}
-$(M, D, F, G) \leftarrow \text{ParseSlots}(E, K)$\tcp*{归一化指标、维度、条件与粒度}
-$(O_q, O_a) \leftarrow \text{DecomposeOps}(T, M, D, F, G, K, \mathcal{O}_a)$\tcp*{区分查询层与分析层操作}
-$\hat{V} \leftarrow \text{InitVis}(T, D, G, \mathcal{V})$\tcp*{生成初始可视化规格}
-$S \leftarrow \text{BuildSummarySpec}(T, M, \hat{V})$\tcp*{生成摘要要求}
-$A \leftarrow \langle T, M, D, F, G, O_q, O_a, \hat{V}, S \rangle$\;
-\Return{$A$}
-\caption{AP-Schema构建算法}\label{alg:analysis_planning}
-\end{algorithm}
+    \KwIn{自然语言分析需求$x$，任务类型集合$\mathcal{T}$，领域知识$K=\{B, L, V\}$，分析算子库$\mathcal{O}_a$，可视化规则库$\mathcal{V}$，约束规则集$\mathcal{C}$，大语言模型$\text{LLM}$}
+    \KwOut{分析计划$A=\langle T, M, D, \hat{F}, G, O_q, O_a, \hat{V}, \hat{S} \rangle$}
+    初始化：$A \leftarrow \emptyset$\;
+    $E \leftarrow \text{LLM}(x, K)$ \tcp*{抽取指标、维度、时间范围、粒度与展示意图}
+    $T \leftarrow \text{IdentifyType}(E, \mathcal{T})$\tcp*{识别分析类型}
+    $(M, D, \hat{F}, G) \leftarrow \text{ParseSlots}(E, K)$\tcp*{归一化指标、维度、条件与粒度}
+    $(O_q, O_a) \leftarrow \text{DecomposeOps}(T, M, D, \hat{F}, G, K, \mathcal{O}_a)$\tcp*{区分查询层与分析层操作}
+    $\hat{V} \leftarrow \text{InitVis}(T, D, G, \mathcal{V})$\tcp*{生成初始可视化规格}
+    $\hat{S} \leftarrow \text{BuildSummarySpec}(T, M, \hat{V})$\tcp*{生成摘要要求}
+    $A \leftarrow \langle T, M, D, \hat{F}, G, O_q, O_a, \hat{V}, \hat{S} \rangle$\;
+    \If{$\neg\,\text{Valid}(A, \mathcal{C})$}{
+        $(M, D, \hat{F}, G) \leftarrow \text{CompleteFields}(x, K, T)$\tcp*{基于约束规则触发补全}
+        \tcp{再次执行重新获取字段信息}
+        $(O_q, O_a) \leftarrow \text{DecomposeOps}(T, M, D, \hat{F}, G, K, \mathcal{O}_a)$\\
+        $\hat{V} \leftarrow \text{InitVis}(T, D, G, \mathcal{V})$\\
+        $\hat{S} \leftarrow \text{BuildSummarySpec}(T, M, \hat{V})$\\
+        $A \leftarrow \langle T, M, D, \hat{F}, G, O_q, O_a, \hat{V}, \hat{S} \rangle$\;
+    }
+    \Return{$A$}
+    \caption{AP-Schema构建算法}\label{alg:analysis_planning}
+    \end{algorithm}
 
-AP-Schema的引入带来两方面收益。其一，它将分析任务中的隐式约束显式化，减少系统在后续步骤中遗漏关键分析要求的风险；其二，它为第三章与第四章之间建立了统一接口，使“取什么数据”和“如何组织分析结果”能够在同一规划框架下协同工作。由此，第四章不再被表述为独立的脚本生成问题，而是成为第三章可靠查询能力向政务数据洞察能力延伸的关键过渡层。
+
+上述流程在返回前需进行基于公式\eqref{eq:ap_valid}的完备性校验。当校验发现规划中存在字段缺失或类型不匹配时，系统回溯至槽位填充阶段进行二次提取或默认值填充，从而提升规划的鲁棒性。
+
+通过上述四步，系统可将“分析近两年各区一般公共预算收入的月度趋势，并给出同比变化”这一自然语言需求映射为表\ref{tab:ap_schema_example}所示的完整AP-Schema实例。
+
+\begin{table}[htbp]
+	\setlength{\abovecaptionskip}{5pt}
+	\setlength{\belowcaptionskip}{5pt}
+	\caption{自然语言分析需求到AP-Schema的映射示例}\label{tab:ap_schema_example}
+	\centering
+	\footnotesize
+	\begin{tabular}{p{1.5cm}p{10.5cm}}
+		\toprule
+		字段 & 映射结果 \\
+		\midrule
+		$T$ & \texttt{trend} \\
+		$M$ & \{一般公共预算收入/SUM,\ 同比增长率/逻辑指标\} \\
+		$D$ & \{区县,\ 年月\} \\
+		$\hat{F}$ & \{年份$\in$\{2024, 2025\}\} \\
+		$G$ & 月度（month） \\
+		$O_q$ & \{按区县和年月汇总,\ 同月同比口径\} \\
+		$O_a$ & [\texttt{sort},\ \texttt{annotate}] \\
+		$\hat{V}$ & 折线图,\ x轴=年月,\ y轴=收入金额,\ 副轴=同比增长率 \\
+		$\hat{S}$ & 趋势摘要：整体走势、峰值月份、同比最大增幅 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+AP-Schema的引入带来三方面收益。
+其一，它将分析任务中的隐式约束显式化，减少系统在后续步骤中遗漏关键分析要求的风险；
+其二，它为数据查询与数据分析模块之间建立了统一接口，使“取什么数据”和“如何组织分析结果”能够在同一规划框架下协同工作；
+其三，字段约束关系和完备性校验为规划质量提供了可检查的保障机制，使系统在面对表述不完整或存在歧义的用户输入时仍能生成结构完整的分析规划。
+
 
 \section{基于查询增强的分析任务分解方法}
 
