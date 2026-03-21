@@ -89,17 +89,7 @@ $\mathcal{D}$表示该管线返回的数据结果、字段元数据与执行状�
 整个框架如图\ref{fig:chap04_framework}所示：
 \begin{figure}[htbp]
 	\centering
-	\fbox{
-		\parbox{0.92\textwidth}{
-			\centering
-			\textbf{图示占位：分析规划与查询增强协同框架图}\\[0.4em]
-			自然语言分析需求 $\rightarrow$ 需求解析 $\rightarrow$ AP-Schema构建\\
-			$\rightarrow$ 查询需求投影 $\pi_q(A)$ 与原始需求共同构造查询子问题\\
-			$\rightarrow$ 结合$S,K,F$调用第三章查询生成管线取数\\
-			$\rightarrow$ 分析层操作投影 $\pi_a(A)$ $\rightarrow$ 分析算子执行与可视化决策\\
-			$\rightarrow$ ResultPackage
-		}
-	}
+	\includegraphics[width=1.0\textwidth]{figures/chap04/chap04_framework.pdf}
 	\caption{分析规划与查询增强协同数据分析框架图}\label{fig:chap04_framework}
 \end{figure}
 
@@ -127,8 +117,8 @@ AP-Schema的整个构建与约束机制过程如图\ref{fig:ap-schema}所示。
 
 \begin{figure}[htbp]
 	\centering
-	% \setlength{\belowcaptionskip}{-12pt}
-	% \includegraphics[width=0.85\textwidth]{test.pdf}
+	\setlength{\belowcaptionskip}{-12pt}
+	\includegraphics[width=1.0\textwidth]{figures/chap04/ap_schma.pdf}
 	\caption{AP-Schema 构建与约束机制图}
 	\label{fig:ap-schema}
 \end{figure}
@@ -276,6 +266,11 @@ AP-Schema的完整生成流程如算法\ref{alg:analysis_planning}所示。
 
 通过上述四步，系统可将“分析近两年各区一般公共预算收入的月度趋势，并给出同比变化”这一自然语言需求映射为表\ref{tab:ap_schema_example}所示的完整AP-Schema实例。
 
+最终AP-Schema的引入带来三方面收益。
+其一，它将分析任务中的隐式约束显式化，减少系统在后续步骤中遗漏关键分析要求的风险；
+其二，它为数据查询与数据分析模块之间建立了统一接口，使“取什么数据”和“如何组织分析结果”能够在同一规划框架下协同工作；
+其三，字段约束关系和完备性校验为规划质量提供了可检查的保障机制，使系统在面对表述不完整或存在歧义的用户输入时仍能生成结构完整的分析规划。
+
 \begin{table}[htbp]
 	\setlength{\abovecaptionskip}{5pt}
 	\setlength{\belowcaptionskip}{5pt}
@@ -298,12 +293,6 @@ AP-Schema的完整生成流程如算法\ref{alg:analysis_planning}所示。
 			\bottomrule
 		\end{tabular}
 \end{table}
-
-最终AP-Schema的引入带来三方面收益。
-其一，它将分析任务中的隐式约束显式化，减少系统在后续步骤中遗漏关键分析要求的风险；
-其二，它为数据查询与数据分析模块之间建立了统一接口，使“取什么数据”和“如何组织分析结果”能够在同一规划框架下协同工作；
-其三，字段约束关系和完备性校验为规划质量提供了可检查的保障机制，使系统在面对表述不完整或存在歧义的用户输入时仍能生成结构完整的分析规划。
-
 
 \section{基于查询增强的分析任务分解方法}
 上一节完成了从自然语言需求到AP-Schema的结构化规划构建。本节进一步讨论如何将规划中的操作分配给查询层与分析层，并给出两层之间的结果衔接方式。
@@ -338,16 +327,8 @@ $P_A$表示分析层操作链（$O_a$）、可视化规格（$\hat{V}$）和摘�
 % 绘图提示词：学术论文风格流程图，白色背景，简洁矢量，深灰与藏蓝配色，中文标签，展示“AP-Schema分解为查询层与分析层”的双分支结构：自然语言分析需求 -> AP-Schema -> 查询需求投影Q_A和分析需求投影P_A；Q_A连同原始需求、数据库模式S、知识库K、样例库F进入第三章查询生成管线，输出查询结果表示D=<X,Gamma,sigma>；P_A与D共同进入分析算子与可视化规则模块，最终输出ResultPackage。适合硕士论文插图，正式、理性、工程化。
 \begin{figure}[htbp]
 	\centering
-	\fbox{
-		\parbox{0.92\textwidth}{
-			\centering
-			\textbf{图示占位：查询层与分析层任务划分流程图}\\[0.4em]
-			自然语言分析需求 $\rightarrow$ AP-Schema\\
-			$\rightarrow$ 查询需求投影$Q_A$ 与分析需求投影$P_A$\\
-			$\rightarrow$ $Q_A$ + 原始需求 + $S,K,F$ $\rightarrow$ 第三章查询生成管线 $\rightarrow$ 查询结果表示$\mathcal{D}$\\
-			$\rightarrow$ $P_A$ + $\mathcal{D}$ $\rightarrow$ 分析算子与可视化规则 $\rightarrow$ ResultPackage
-		}
-	}
+    \setlength{\belowcaptionskip}{-12pt}
+	\includegraphics[width=0.95\textwidth]{figures/chap04/查询层与分析层任务划分执行流程图.pdf}
 	\caption{查询层与分析层任务划分执行流程图}\label{fig:chap04_partition_framework}
 \end{figure}
 
@@ -411,16 +392,10 @@ $\sigma \in \{\text{success}, \text{failure}\}$表示查询执行状态。
 % 绘图提示词：学术论文风格判定流程图，白底，深灰线条，少量蓝色强调，中文标签，展示分析任务中单个操作o的层级归属判定：候选操作o -> 是否依赖数据库模式信息？ -> 是否涉及统计口径或逻辑指标？ -> 是否需要跨表关联或子查询？ 任一满足则进入查询层，否则进入分析层；查询层输出标准查询结果表示D=<X,Gamma,sigma>，分析层基于D执行排序、透视、标注、展示。整体风格正式、抽象、适合论文。
 \begin{figure}[htbp]
 	\centering
-	\fbox{
-		\parbox{0.92\textwidth}{
-			\centering
-			\textbf{图示占位：操作判定与层间衔接流程图}\\[0.4em]
-			候选操作$o$ $\rightarrow$ 模式依赖性判断 $\rightarrow$ 统计口径判断 $\rightarrow$ 查询结构判断\\
-			$\rightarrow$ 任一条件满足：进入查询层；否则：进入分析层\\
-			$\rightarrow$ 查询层输出$\mathcal{D}=\langle \mathbf{X}, \Gamma, \sigma \rangle$ $\rightarrow$ 分析层执行结果组织与展示
-		}
-	}
-	\caption{操作判定与层间衔接流程图}\label{fig:chap04_decision_flow}
+	% \setlength{\belowcaptionskip}{-16pt}
+	\includegraphics[width=0.77\textwidth, trim=0 180bp 60bp 0, clip]{figures/chap04/层间衔接流程图.pdf}
+	\caption{层间衔接流程图}
+    \label{fig:chap04_decision_flow}
 \end{figure}
 
 
@@ -486,8 +461,10 @@ v^* =
 
 为减少摘要生成过程中的自由发挥，本文将文字洞察生成拆解为“结构化事实抽取”和“摘要组织”两个顺序阶段：
 \begin{equation}
-F^{*} = \text{ExtractFacts}(\mathbf{Y}, \hat{S}), \qquad
+    \begin{cases}
+        F^{*} = \text{ExtractFacts}(\mathbf{Y}, \hat{S}), \\
 I = \text{Verbalize}(F^{*}, \hat{S})
+    \end{cases}
 \label{eq:insight_pipeline}
 \end{equation}
 其中，$F^{*}$表示从结果表中抽取的峰值、增幅、排名和占比等结构化事实集合，$I$表示在摘要要求约束下形成的文字洞察。

@@ -27,7 +27,7 @@
 \RequirePackage{fetamont,hologo,dantelogo,xspace}
 \if@dtk@newengine
   \RequirePackage{unicode-math}
-  \setmathfont{LatinModernMath-Regular}
+  \setmathfont{latinmodern-math.otf}
   \setmathfont[version=XITS]{XITSMath-Regular.otf}
 \fi  
 %
@@ -157,7 +157,7 @@
 \let\pstricks\PSTricks
 
 \if@dtk@newengine
-  \newfontfamily\dtk@LinWikipedia{Linux Libertine O}%
+  \newfontfamily\dtk@LinWikipedia{Times New Roman}%
   \def\WikipediA{{\dtk@LinWikipedia\char"E02F\textsc{ikipediA}}} % hexadezimal
 \else
   \def\WikipediA{WikipediA}%
