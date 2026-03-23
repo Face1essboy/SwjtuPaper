@@ -261,30 +261,31 @@ def fig_architecture() -> None:
         "应用层",
         fill=HexColor("#F8FAFC"),
         modules=[
-            (115, 423, 160, 48, "API接入", ["请求解析", "统一响应"], LIGHT_GRAY),
-            (310, 423, 160, 48, "会话管理", ["session摘要", "多轮继承"], LIGHT_GRAY),
-            (505, 423, 160, 48, "任务管理", ["任务状态", "结果分发"], LIGHT_GRAY),
-            (700, 423, 160, 48, "权限与校验", ["访问控制", "参数检查"], LIGHT_GRAY),
+            (90, 423, 165, 48, "FastAPI Router", ["HTTP接入", "统一路由"], LIGHT_GRAY),
+            (285, 423, 165, 48, "Pydantic Models", ["请求校验", "响应序列化"], LIGHT_GRAY),
+            (480, 423, 165, 48, "Task Manager", ["task_id创建", "状态维护"], LIGHT_GRAY),
+            (675, 423, 165, 48, "SSE Gateway", ["事件推送", "进度回传"], LIGHT_GRAY),
         ],
     )
 
     draw_layer(
         c,
         40,
-        250,
+        235,
         940,
-        125,
+        140,
         "智能服务层",
         fill=HexColor("#F5F9FF"),
         modules=[
-            (85, 280, 160, 64, "调度代理", ["意图识别", "任务路由", "流程编排"], LIGHT_ORANGE),
-            (290, 270, 210, 82, "查询代理", ["LA-Schema构建", "双路候选生成", "修复与判别"], LIGHT_BLUE),
-            (535, 270, 210, 82, "分析代理", ["AP-Schema规划", "查询增强取数", "算子链执行"], LIGHT_CYAN),
-            (780, 280, 150, 64, "结果组织代理", ["ResultPackage封装", "图表/表格/洞察整合"], LIGHT_GREEN),
+            (65, 270, 150, 72, "Dispatch Node", ["意图识别", "选择Query/Analysis Graph"], LIGHT_ORANGE),
+            (250, 258, 210, 96, "Query Graph", ["context/schema/knowledge/example", "logic+cot生成", "repair/select/execute/build"], LIGHT_BLUE),
+            (490, 258, 210, 96, "Analysis Graph", ["plan/project/query-call", "pandas算子", "chart/insight/package"], LIGHT_CYAN),
+            (730, 270, 130, 72, "Result Builder", ["ResultPackage", "artifact/log"], LIGHT_GREEN),
+            (875, 270, 90, 72, "LLM HTTP", ["本地模型", "统一调用"], LIGHT_ORANGE),
         ],
     )
-    draw_badge(c, 345, 352, "第三章方法", fill=SKY, font_size=8)
-    draw_badge(c, 590, 352, "第四章方法", fill=SKY, font_size=8)
+    draw_badge(c, 318, 352, "第三章方法实现", fill=SKY, font_size=8)
+    draw_badge(c, 558, 352, "第四章方法实现", fill=SKY, font_size=8)
 
     draw_layer(
         c,
@@ -295,11 +296,12 @@ def fig_architecture() -> None:
         "数据层",
         fill=HexColor("#FCFCFD"),
         modules=[
-            (85, 130, 145, 64, "政务业务库", ["财政/项目/公共资源", "原始业务数据"], LIGHT_ORANGE),
-            (260, 130, 155, 64, "系统元数据库", ["session/task", "artifact/log"], LIGHT_GRAY),
-            (445, 130, 145, 64, "领域知识库", ["K={B,L,V}", "业务术语与逻辑"], LIGHT_BLUE),
-            (620, 130, 145, 64, "向量/样例库", ["Milvus", "动态样例库F"], LIGHT_CYAN),
-            (795, 130, 145, 64, "缓存与产物存储", ["Redis热点缓存", "图表与导出文件"], LIGHT_GREEN),
+            (70, 130, 135, 64, "政务业务库", ["财政/项目/公共资源", "原始业务数据"], LIGHT_ORANGE),
+            (225, 130, 180, 64, "PostgreSQL + SQLAlchemy", ["session/task/log/artifact", "领域知识与元数据"], LIGHT_GRAY),
+            (430, 130, 130, 64, "Milvus", ["值检索", "动态样例库F"], LIGHT_CYAN),
+            (585, 130, 130, 64, "Redis", ["热点缓存", "SSE事件通道"], LIGHT_GREEN),
+            (740, 130, 140, 64, "文件产物存储", ["图表文件", "导出结果"], LIGHT_GREEN),
+            (905, 130, 60, 64, "Trace", ["task_id", "trace_id"], LIGHT_BLUE),
         ],
     )
 
@@ -307,114 +309,66 @@ def fig_architecture() -> None:
         draw_arrow(c, x, 520, x, 495, label=None, color=LINE, width=1.1)
         draw_arrow(c, x, 400, x, 375, label=None, color=LINE, width=1.1)
 
-    draw_arrow(c, 500, 310, 535, 310, label="分析复用查询服务", label_dy=8, color=BLUE)
-    draw_arrow(c, 190, 250, 190, 225, color=LINE, width=1.1)
-    draw_arrow(c, 370, 250, 370, 225, color=LINE, width=1.1)
-    draw_arrow(c, 640, 250, 640, 225, color=LINE, width=1.1)
-    draw_arrow(c, 855, 250, 855, 225, color=LINE, width=1.1)
+    draw_arrow(c, 460, 305, 490, 305, label="query_service_caller复用查询图", label_dy=10, color=BLUE)
+    draw_arrow(c, 160, 235, 160, 225, color=LINE, width=1.1)
+    draw_arrow(c, 355, 235, 355, 225, color=LINE, width=1.1)
+    draw_arrow(c, 595, 235, 595, 225, color=LINE, width=1.1)
+    draw_arrow(c, 795, 235, 795, 225, color=LINE, width=1.1)
+    draw_arrow(c, 920, 235, 920, 225, color=LINE, width=1.1)
 
     c.save()
 
 
 def fig_dual_flow() -> None:
-    c = new_canvas("fig5-2_dual_workflow.pdf", 1140, 600)
+    c = new_canvas("fig5-2_dual_workflow.pdf", 1140, 660)
 
-    draw_round_box(
-        c,
-        30,
-        500,
-        150,
-        56,
-        "用户请求",
-        ["自然语言问数或分析需求"],
-        fill=LIGHT_ORANGE,
-        body_size=8,
-    )
-    draw_round_box(
-        c,
-        210,
-        500,
-        140,
-        56,
-        "调度代理",
-        ["任务识别", "上下文注入"],
-        fill=LIGHT_BLUE,
-        body_size=8,
-    )
-    draw_arrow(c, 180, 528, 210, 528, color=BLUE)
+    draw_round_box(c, 30, 560, 130, 54, "前端页面", ["问数输入", "结果查看"], fill=LIGHT_ORANGE, body_size=8)
+    draw_round_box(c, 190, 555, 150, 64, "FastAPI Router", ["HTTP路由", "统一异常处理"], fill=LIGHT_GRAY, body_size=8)
+    draw_round_box(c, 375, 555, 145, 64, "Pydantic", ["请求/响应模型", "参数校验"], fill=LIGHT_GRAY, body_size=8)
+    draw_round_box(c, 555, 555, 150, 64, "Task Manager", ["task_id创建", "PENDING/RUNNING"], fill=LIGHT_BLUE, body_size=8)
+    draw_round_box(c, 740, 555, 150, 64, "SSE Gateway", ["事件编码", "流式回传"], fill=LIGHT_CYAN, body_size=8)
+    draw_round_box(c, 925, 555, 170, 64, "状态/结果接口", ["GET /tasks/{id}", "result / events"], fill=LIGHT_GREEN, body_size=8)
 
-    c.setFont(CN_FONT, 12)
-    c.setFillColor(NAVY)
-    c.drawString(38, 455, "查询流程")
-    c.drawString(38, 230, "分析流程")
+    draw_arrow(c, 160, 587, 190, 587, color=BLUE)
+    draw_arrow(c, 340, 587, 375, 587, color=BLUE)
+    draw_arrow(c, 520, 587, 555, 587, color=BLUE)
+    draw_arrow(c, 705, 587, 740, 587, color=BLUE)
+    draw_arrow(c, 890, 587, 925, 587, color=BLUE)
+
+    draw_text(c, 115, 515, ["应用层接口"], size=12, fill=NAVY, align="center")
+    draw_round_box(c, 55, 455, 220, 60, "POST /api/v1/query", ["同步查询；stream=true时返回SSE"], fill=LIGHT_BLUE, body_size=8)
+    draw_round_box(c, 305, 455, 250, 60, "POST /api/v1/analysis/tasks", ["创建异步分析任务并返回task_id/event_channel"], fill=LIGHT_CYAN, body_size=8)
+    draw_round_box(c, 585, 455, 250, 60, "GET /api/v1/tasks/{task_id}", ["查询状态、结果与事件流入口"], fill=LIGHT_GREEN, body_size=8)
+    draw_round_box(c, 865, 455, 220, 60, "统一响应对象", ["QueryResponse / AnalysisResultResponse"], fill=LIGHT_GRAY, body_size=8)
+
     c.setStrokeColor(HexColor("#D0D7E2"))
     c.setLineWidth(1)
-    c.line(32, 438, 1105, 438)
+    c.line(32, 425, 1105, 425)
 
-    top_titles = [
-        ("LA-Schema构建", ["模式链接", "知识注入"]),
-        ("双路候选生成", ["逻辑映射生成器", "渐进分治生成器"]),
-        ("查询修复", ["执行反馈", "至多三轮修复"]),
-        ("候选判别", ["配对比较", "最优SQL选择"]),
-        ("SQL执行", ["正式取数", "生成结果表"]),
-        ("结果返回与日志落库", ["返回final_sql/result_table", "写入artifact/log"]),
-    ]
-    x = 60
-    top_centers = []
-    for title, lines in top_titles:
-        w = 160 if title != "结果返回与日志落库" else 190
-        draw_round_box(c, x, 325, w, 78, title, lines, fill=LIGHT_BLUE, body_size=8, title_size=10)
-        top_centers.append((x + w / 2, 364))
-        x += w + 20
+    draw_text(c, 125, 392, ["智能服务层实现"], size=12, fill=NAVY, align="center")
+    draw_round_box(c, 55, 300, 265, 96, "Query Graph", ["context_loader -> schema_retriever -> knowledge_retriever", "example_retriever -> logic_sql_generator -> cot_sql_generator", "sql_repair -> candidate_selector -> db_executor -> query_result_builder"], fill=LIGHT_BLUE, body_size=8, align="left")
+    draw_round_box(c, 360, 300, 300, 96, "Analysis Graph", ["analysis_planner -> qa_projector -> query_service_caller", "operator_executor -> chart_spec_builder -> insight_generator", "result_package_builder"], fill=LIGHT_CYAN, body_size=8, align="left")
+    draw_round_box(c, 705, 300, 180, 96, "Support Tools", ["LLM HTTP Client", "Structured Logger", "Artifact Writer"], fill=LIGHT_GRAY, body_size=8)
+    draw_round_box(c, 920, 300, 170, 96, "Result Callback", ["写入task/log/artifact", "回传JSON或SSE事件"], fill=LIGHT_GREEN, body_size=8)
 
-    draw_arrow(c, 280, 500, top_centers[0][0], 403, color=BLUE, label="查询类任务", label_dy=10)
-    for i in range(len(top_centers) - 1):
-        draw_arrow(c, top_centers[i][0] + 80, 364, top_centers[i + 1][0] - 80, 364, color=BLUE)
+    draw_arrow(c, 165, 455, 165, 396, color=BLUE)
+    draw_arrow(c, 430, 455, 510, 396, color=SKY, label="analysis task", label_dy=8)
+    draw_arrow(c, 710, 455, 1005, 396, color=LINE, label="status/result/events", label_dy=8)
+    draw_arrow(c, 320, 348, 360, 348, color=BLUE, label="query_service_caller复用查询服务", label_dy=10)
+    draw_arrow(c, 660, 348, 705, 348, color=LINE)
+    draw_arrow(c, 885, 348, 920, 348, color=LINE)
 
-    draw_round_box(
-        c,
-        430,
-        415,
-        260,
-        60,
-        "共享查询服务",
-        ["由第三章方法统一完成LA-Schema、候选生成、修复与判别"],
-        fill=LIGHT_GRAY,
-        body_size=8,
-        title_size=10,
-    )
+    draw_round_box(c, 95, 135, 160, 78, "PostgreSQL", ["元数据、session、task、log", "SQLAlchemy统一读写"], fill=LIGHT_ORANGE, body_size=8)
+    draw_round_box(c, 300, 135, 150, 78, "Milvus", ["值检索", "动态样例检索"], fill=LIGHT_CYAN, body_size=8)
+    draw_round_box(c, 495, 135, 150, 78, "Redis", ["热点缓存", "事件通道"], fill=LIGHT_GREEN, body_size=8)
+    draw_round_box(c, 690, 135, 160, 78, "本地大模型HTTP服务", ["Qwen推理接口", "结构化提示调用"], fill=LIGHT_ORANGE, body_size=8)
+    draw_round_box(c, 895, 135, 165, 78, "ECharts / 文件产物", ["option生成", "图表与导出落盘"], fill=LIGHT_GRAY, body_size=8)
 
-    bottom_titles = [
-        ("AP-Schema构建", ["识别T/M/D/F/G", "生成JSON化任务规划"]),
-        ("Q_A / P_A投影", ["抽取查询约束", "抽取分析操作"]),
-        ("调用查询服务取数", ["组装受约束子问题", "返回D=<X,Γ,σ>"]),
-        ("分析算子链执行", ["排序/占比/透视", "图表规格校正"]),
-        ("结果生成", ["charts/tables/insights", "封装ResultPackage"]),
-    ]
-    x = 90
-    bottom_centers = []
-    widths = [170, 160, 180, 170, 170]
-    for (title, lines), w in zip(bottom_titles, widths):
-        draw_round_box(c, x, 120, w, 84, title, lines, fill=LIGHT_CYAN, body_size=8, title_size=10)
-        bottom_centers.append((x + w / 2, 162))
-        x += w + 28
-
-    draw_arrow(c, 280, 500, bottom_centers[0][0], 204, color=SKY, label="分析类任务", label_dy=-12)
-    for i in range(len(bottom_centers) - 1):
-        draw_arrow(c, bottom_centers[i][0] + widths[i] / 2, 162, bottom_centers[i + 1][0] - widths[i + 1] / 2, 162, color=SKY)
-
-    draw_arrow(
-        c,
-        bottom_centers[2][0],
-        204,
-        560,
-        415,
-        color=SKY,
-        dashed=True,
-        label="复用查询服务",
-        label_dx=16,
-        label_dy=6,
-    )
+    draw_arrow(c, 190, 300, 175, 213, color=LINE, dashed=True, label="ORM/元数据", label_dx=-8, label_dy=8)
+    draw_arrow(c, 250, 300, 375, 213, color=LINE, dashed=True, label="向量检索", label_dy=8)
+    draw_arrow(c, 510, 300, 570, 213, color=LINE, dashed=True, label="任务热状态", label_dy=8)
+    draw_arrow(c, 780, 300, 770, 213, color=LINE, dashed=True, label="模型调用", label_dx=28, label_dy=8)
+    draw_arrow(c, 1000, 300, 980, 213, color=LINE, dashed=True, label="图表产物", label_dx=26, label_dy=8)
 
     c.save()
 
@@ -422,99 +376,140 @@ def fig_dual_flow() -> None:
 def fig_agents_context() -> None:
     c = new_canvas("fig5-3_agent_context.pdf", 1020, 600)
 
+    draw_round_box(c, 395, 500, 230, 62, "LangGraph Router", ["intent -> Query Graph / Analysis Graph"], fill=LIGHT_ORANGE, body_size=9)
+
     draw_round_box(
         c,
-        365,
-        225,
-        290,
-        150,
-        "会话上下文中心",
+        70,
+        265,
+        300,
+        160,
+        "Query Graph",
         [
-            "history_summary",
-            "recent_sql",
-            "recent_result_digest",
-            "ap_schema_digest",
-            "user_feedback / selected_constraints",
+            "context_loader",
+            "schema_retriever / knowledge_retriever / example_retriever",
+            "logic_sql_generator / cot_sql_generator",
+            "sql_repair / candidate_selector",
+            "db_executor / query_result_builder",
+        ],
+        fill=LIGHT_BLUE,
+        align="left",
+        body_size=8,
+        title_size=11,
+    )
+
+    draw_round_box(
+        c,
+        650,
+        265,
+        300,
+        160,
+        "Analysis Graph",
+        [
+            "analysis_planner / qa_projector",
+            "query_service_caller",
+            "operator_executor / chart_spec_builder",
+            "insight_generator / result_package_builder",
+        ],
+        fill=LIGHT_CYAN,
+        align="left",
+        body_size=8,
+        title_size=11,
+    )
+
+    draw_round_box(
+        c,
+        315,
+        230,
+        390,
+        110,
+        "共享状态 GraphState",
+        [
+            "session_id, task_id, trace_id, intent, nl_query, session_summary",
+            "la_schema_snapshot, ap_schema, query_result, result_package, status, error",
         ],
         fill=LIGHT_GRAY,
         align="left",
         body_size=9,
-        title_size=12,
+        title_size=11,
     )
 
-    draw_round_box(c, 410, 470, 200, 74, "调度代理", ["意图分类", "任务路由", "结果汇总"], fill=LIGHT_ORANGE, body_size=9)
-    draw_round_box(c, 105, 300, 200, 84, "查询代理", ["第三章完整查询管线", "输出final_sql与result_table"], fill=LIGHT_BLUE, body_size=9)
-    draw_round_box(c, 715, 300, 200, 84, "分析代理", ["第四章规划与算子执行", "内部调用查询代理取数"], fill=LIGHT_CYAN, body_size=9)
-    draw_round_box(c, 395, 60, 230, 84, "结果组织代理", ["统一封装charts/tables/insights/logs", "面向前端输出ResultPackage"], fill=LIGHT_GREEN, body_size=9)
-    draw_round_box(c, 40, 470, 230, 60, "领域知识与样例支撑", ["K={B,L,V}    动态样例库F"], fill=LIGHT_BLUE, body_size=9)
-    draw_round_box(c, 748, 470, 220, 60, "业务数据与系统存储", ["政务业务库 / 元数据库 / 缓存"], fill=LIGHT_ORANGE, body_size=9)
-    draw_round_box(c, 35, 90, 250, 72, "前端与应用层", ["自然语言请求、会话切换、结果查看"], fill=LIGHT_GRAY, body_size=9)
+    draw_round_box(c, 60, 105, 170, 84, "Tool: metadata_reader", ["PostgreSQL / SQLAlchemy", "schema_* / knowledge / session"], fill=LIGHT_ORANGE, body_size=8)
+    draw_round_box(c, 255, 105, 160, 84, "Tool: vector_searcher", ["Milvus值检索", "动态样例库F"], fill=LIGHT_CYAN, body_size=8)
+    draw_round_box(c, 440, 105, 150, 84, "Tool: llm_http_client", ["本地模型HTTP推理", "结构化提示模板"], fill=LIGHT_ORANGE, body_size=8)
+    draw_round_box(c, 615, 105, 160, 84, "Tool: db_executor", ["目标政务业务库", "正式SQL执行"], fill=LIGHT_GREEN, body_size=8)
+    draw_round_box(c, 800, 105, 160, 84, "Tool: operator/chart/log", ["Pandas / ECharts", "artifact_writer / logger"], fill=LIGHT_GREEN, body_size=8)
 
-    draw_arrow(c, 285, 126, 395, 126, color=BLUE, label="请求进入", label_dy=10)
-    draw_arrow(c, 510, 144, 510, 225, color=LINE)
-    draw_arrow(c, 510, 470, 510, 375, color=BLUE, label="读写上下文", label_dx=55)
-    draw_arrow(c, 305, 342, 365, 320, color=SKY, label="写入查询结果摘要", label_dy=10)
-    draw_arrow(c, 655, 320, 715, 342, color=SKY, label="读取历史状态", label_dy=10)
-    draw_arrow(c, 305, 342, 410, 507, color=BLUE, label="受调度执行", label_dx=-10, label_dy=10)
-    draw_arrow(c, 610, 507, 715, 342, color=BLUE, label="分析任务路由", label_dx=12)
-    draw_arrow(c, 715, 286, 305, 286, color=BLUE, label="分析代理调用查询代理取数", label_dy=10)
-    draw_arrow(c, 205, 470, 205, 384, color=LINE, dashed=True, label="知识增强", label_dx=-28, label_dy=8)
-    draw_arrow(c, 858, 470, 858, 384, color=LINE, dashed=True, label="数据读写", label_dx=30, label_dy=8)
-    draw_arrow(c, 510, 225, 510, 144, color=LINE, label="产物落库与回显", label_dx=58)
-    draw_arrow(c, 510, 225, 510, 144, color=LINE)
+    draw_arrow(c, 455, 500, 220, 425, color=BLUE, label="查询任务", label_dx=-16, label_dy=10)
+    draw_arrow(c, 565, 500, 800, 425, color=SKY, label="分析任务", label_dx=20, label_dy=10)
+    draw_arrow(c, 220, 265, 410, 340, color=LINE, label="写入LA-Schema / QueryResponse", label_dx=20, label_dy=8)
+    draw_arrow(c, 800, 265, 610, 340, color=LINE, label="写入AP-Schema / ResultPackage", label_dx=-30, label_dy=8)
+    draw_arrow(c, 650, 345, 370, 345, color=BLUE, label="query_service_caller", label_dy=10)
+
+    draw_arrow(c, 145, 189, 145, 265, color=LINE, dashed=True)
+    draw_arrow(c, 335, 189, 250, 265, color=LINE, dashed=True)
+    draw_arrow(c, 515, 189, 515, 230, color=LINE, dashed=True)
+    draw_arrow(c, 695, 189, 695, 265, color=LINE, dashed=True)
+    draw_arrow(c, 880, 189, 880, 265, color=LINE, dashed=True)
+
+    draw_text(c, 510, 38, ["系统中的“多智能体”并非自由自治对话，而是基于StateGraph的确定性节点编排与工具绑定调用。"], size=9, fill=MUTED, align="center")
 
     c.save()
 
 
 def fig_sequence() -> None:
-    c = new_canvas("fig5-4_analysis_sequence.pdf", 1140, 680)
+    c = new_canvas("fig5-4_analysis_sequence.pdf", 1160, 720)
 
     participants = [
-        ("前端页面", 95),
-        ("应用层", 240),
-        ("调度代理", 390),
-        ("分析代理", 545),
-        ("查询代理", 705),
-        ("政务业务库", 865),
-        ("结果组织代理", 1025),
+        ("前端页面", 90),
+        ("FastAPI", 250),
+        ("Task Manager", 415),
+        ("Query Graph", 590),
+        ("Analysis Graph", 760),
+        ("Redis / SSE", 930),
+        ("PostgreSQL / Artifact", 1085),
     ]
-    top_y = 625
-    bottom_y = 70
+    bottom_y = 80
 
     for name, x in participants:
-        draw_round_box(c, x - 52, 630, 104, 34, name, [], fill=LIGHT_GRAY, title_size=10, title_height=18)
-        draw_dashed_line(c, x, 625, x, bottom_y)
+        draw_round_box(c, x - 58, 670, 116, 36, name, [], fill=LIGHT_GRAY, title_size=10, title_height=18)
+        draw_dashed_line(c, x, 668, x, bottom_y)
 
-    messages = [
-        (95, 240, 590, "提交分析请求"),
-        (240, 390, 555, "附带session_summary"),
-        (390, 545, 520, "路由至分析代理"),
-        (545, 545, 485, "构建AP-Schema"),
-        (545, 705, 445, "发送query_projection(Q_A)"),
-        (705, 865, 405, "执行最优SQL"),
-        (865, 705, 365, "返回result_table + status"),
-        (705, 545, 320, "返回D=<X,Γ,σ>"),
-        (545, 1025, 275, "生成charts/tables/insights"),
-        (1025, 240, 230, "返回ResultPackage"),
-        (240, 95, 190, "渲染图表与文字洞察"),
+    c.setFont(CN_FONT, 12)
+    c.setFillColor(NAVY)
+    c.drawString(40, 620, "同步查询")
+    c.drawString(40, 345, "异步分析与流式回传")
+    c.setStrokeColor(HexColor("#D0D7E2"))
+    c.setLineWidth(1)
+    c.line(35, 332, 1120, 332)
+
+    top_messages = [
+        (90, 250, 580, "POST /api/v1/query"),
+        (250, 415, 545, "创建query_task与task_id"),
+        (250, 590, 505, "执行Query Graph"),
+        (590, 1085, 465, "写入result_artifact / execution_log"),
+        (590, 930, 425, "stream=true时写入事件"),
+        (590, 250, 385, "返回QueryResponse"),
+        (250, 90, 345, "同步返回SQL与结果表"),
     ]
+    for x1, x2, y, label in top_messages:
+        draw_arrow(c, x1, y, x2, y, color=BLUE, label=label, label_dy=8)
 
-    for x1, x2, y, label in messages:
-        draw_arrow(c, x1, y, x2, y, color=BLUE if x1 != x2 else SKY, label=label, label_dy=8)
-        if x1 == x2:
-            c.setStrokeColor(SKY)
-            c.line(x1, y, x1 + 55, y)
-            draw_arrow(c, x1 + 55, y, x1, y - 25, color=SKY)
+    bottom_messages = [
+        (90, 250, 285, "POST /api/v1/analysis/tasks"),
+        (250, 415, 250, "创建analysis_task=PENDING"),
+        (250, 90, 215, "返回task_id + event_channel"),
+        (415, 760, 180, "后台触发Analysis Graph"),
+        (760, 930, 145, "写入node_completed / result_ready"),
+        (930, 90, 110, "GET /events 持续接收SSE"),
+        (760, 1085, 255, "写入ap_schema / ResultPackage"),
+        (90, 250, 75 + 35, "GET /tasks/{id}/result"),
+        (250, 1085, 75, "读取最终结果与状态"),
+    ]
+    for x1, x2, y, label in bottom_messages:
+        draw_arrow(c, x1, y, x2, y, color=SKY if y < 200 else BLUE, label=label, label_dy=8)
 
-    draw_text(
-        c,
-        545,
-        135,
-        ["分析代理在规划完成后并不直接生成SQL，", "而是通过标准查询接口复用第三章的取数能力。"],
-        size=9,
-        fill=MUTED,
-        align="center",
-    )
+    draw_text(c, 575, 305, ["查询接口同步返回结果，但仍创建task_id以支撑统一追溯；", "分析接口先返回任务标识，再通过状态接口和SSE完成异步回传。"], size=9, fill=MUTED, align="center")
 
     c.save()
 
@@ -614,32 +609,32 @@ def fig_er() -> None:
 def fig_exception_flow() -> None:
     c = new_canvas("fig5-7_exception_trace.pdf", 1040, 560)
 
-    draw_round_box(c, 40, 415, 150, 58, "执行请求", ["查询或分析任务"], fill=LIGHT_ORANGE, body_size=9)
-    draw_round_box(c, 230, 415, 170, 58, "执行SQL / 分析脚本", ["调用数据库或算子链"], fill=LIGHT_BLUE, body_size=9)
-    draw_round_box(c, 460, 410, 130, 68, "是否成功", ["success ?"], fill=LIGHT_GRAY, body_size=10)
-    draw_round_box(c, 640, 415, 170, 58, "产物封装", ["生成结果并更新上下文"], fill=LIGHT_GREEN, body_size=9)
-    draw_round_box(c, 860, 415, 140, 58, "返回前端", ["展示结果"], fill=LIGHT_GREEN, body_size=9)
+    draw_round_box(c, 35, 420, 150, 58, "任务创建", ["状态=PENDING"], fill=LIGHT_ORANGE, body_size=9)
+    draw_round_box(c, 230, 420, 170, 58, "子图执行", ["状态=RUNNING", "节点持续写日志"], fill=LIGHT_BLUE, body_size=9)
+    draw_round_box(c, 450, 415, 140, 68, "是否成功", ["success ?"], fill=LIGHT_GRAY, body_size=10)
+    draw_round_box(c, 640, 420, 170, 58, "结果回传", ["写ResultPackage", "推送result_ready"], fill=LIGHT_GREEN, body_size=9)
+    draw_round_box(c, 860, 420, 145, 58, "任务完成", ["状态=SUCCESS"], fill=LIGHT_GREEN, body_size=9)
 
-    draw_round_box(c, 230, 245, 170, 58, "异常分类", ["SQL错误 / 空结果 / 脚本异常 / 超时"], fill=LIGHT_ORANGE, body_size=8)
-    draw_round_box(c, 455, 245, 140, 58, "是否可恢复", ["recoverable ?"], fill=LIGHT_GRAY, body_size=10)
-    draw_round_box(c, 640, 245, 170, 58, "修复与重试", ["查询修复器或参数调整", "retry < β"], fill=LIGHT_CYAN, body_size=8)
-    draw_round_box(c, 860, 235, 140, 78, "失败终止", ["记录失败状态", "返回解释性错误信息"], fill=LIGHT_RED, body_size=8)
+    draw_round_box(c, 225, 245, 180, 58, "异常拦截", ["FastAPI异常 / 节点异常"], fill=LIGHT_ORANGE, body_size=8)
+    draw_round_box(c, 450, 245, 140, 58, "是否可恢复", ["recoverable ?"], fill=LIGHT_GRAY, body_size=10)
+    draw_round_box(c, 635, 235, 185, 78, "修复与重试", ["sql_repair / 参数修正", "状态保持RUNNING"], fill=LIGHT_CYAN, body_size=8)
+    draw_round_box(c, 860, 235, 145, 78, "失败回传", ["状态=FAILED", "推送task_failed"], fill=LIGHT_RED, body_size=8)
 
-    draw_round_box(c, 130, 55, 780, 110, "结果追溯与留痕", ["每个关键步骤均写入execution_log；成功与失败产物统一登记至result_artifact；", "session_context同步维护最近SQL、结果摘要和失败原因，从而支持问题定位、结果复现与后续追问。"], fill=LIGHT_GRAY, body_size=10)
+    draw_round_box(c, 120, 60, 800, 110, "日志、产物与可追溯状态", ["execution_log记录trace_id、node_name、status与error；", "result_artifact保存成功产物或失败说明；session_context同步更新最近结果摘要与用户可追问状态。"], fill=LIGHT_GRAY, body_size=10)
 
-    draw_arrow(c, 190, 444, 230, 444, color=BLUE)
-    draw_arrow(c, 400, 444, 460, 444, color=BLUE)
-    draw_arrow(c, 590, 444, 640, 444, color=BLUE, label="是", label_dy=10)
-    draw_arrow(c, 810, 444, 860, 444, color=BLUE)
+    draw_arrow(c, 185, 449, 230, 449, color=BLUE)
+    draw_arrow(c, 400, 449, 450, 449, color=BLUE)
+    draw_arrow(c, 590, 449, 640, 449, color=BLUE, label="是", label_dy=10)
+    draw_arrow(c, 810, 449, 860, 449, color=BLUE)
 
-    draw_arrow(c, 525, 410, 525, 303, color=SKY, label="否", label_dx=18)
-    draw_arrow(c, 400, 274, 455, 274, color=SKY)
-    draw_arrow(c, 595, 274, 640, 274, color=SKY, label="是", label_dy=10)
-    draw_arrow(c, 810, 274, 860, 274, color=SKY, label="否", label_dy=10)
-    draw_arrow(c, 640, 303, 400, 415, color=SKY, dashed=True, label="重试后回到执行阶段", label_dx=14, label_dy=8)
+    draw_arrow(c, 520, 415, 520, 303, color=SKY, label="否", label_dx=18)
+    draw_arrow(c, 405, 274, 450, 274, color=SKY)
+    draw_arrow(c, 590, 274, 635, 274, color=SKY, label="是", label_dy=10)
+    draw_arrow(c, 820, 274, 860, 274, color=SKY, label="否", label_dy=10)
+    draw_arrow(c, 635, 303, 400, 420, color=SKY, dashed=True, label="重试后继续执行子图", label_dx=16, label_dy=8)
 
-    for x in (115, 315, 525, 725, 925):
-        draw_arrow(c, x, 235, x, 165, color=LINE, dashed=True)
+    for x in (110, 315, 520, 725, 930):
+        draw_arrow(c, x, 235, x, 170, color=LINE, dashed=True)
 
     c.save()
 

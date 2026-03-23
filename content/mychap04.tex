@@ -128,8 +128,10 @@ AP-Schema的整个构建与约束机制过程如图\ref{fig:ap-schema}所示。
 
 为统一表达分析需求并为后续查询投影与算子编排提供结构化基础，本文引入分析规划模式AP-Schema，并将其定义为：
 \begin{equation}
-A = \langle T, M, D, \hat{F}, G, O_q, O_a, \hat{V}, \hat{S} \rangle,\qquad
+    \begin{cases}
+        A = \langle T, M, D, \hat{F}, G, O_q, O_a, \hat{V}, \hat{S} \rangle,\\
 T \in \{\text{trend}, \text{comparison}, \text{ranking}, \text{structural}\}
+    \end{cases}
 \label{eq:ap_schema}
 \end{equation}
 % 其中，$T$表示分析类型，$M$表示目标指标集合，$D$表示语义维度集合，$\hat{F}$表示筛选条件集合，$G$表示统计粒度，$O_q$表示查询层操作集合，$O_a$表示分析层操作集合，
@@ -145,7 +147,7 @@ T \in \{\text{trend}, \text{comparison}, \text{ranking}, \text{structural}\}
 	\centering
 	\footnotesize
 	\renewcommand{\arraystretch}{1.4}
-	\begin{tabular}{p{2.2cm}cp{4.8cm}p{5.2cm}}
+	\begin{tabular}{p{2.0cm}p{1.0cm}p{4.8cm}p{4.5cm}}
 		\toprule
 		组成部分 & 符号 & 含义 & 典型取值 \\
 		\midrule
@@ -174,7 +176,7 @@ AP-Schema的九个字段并非相互独立，而是存在由分析类型$T$驱�
 	\caption{分析类型对AP-Schema关键字段的约束}\label{tab:ap_schema_constraints}
 	\centering
 	\footnotesize
-    \renewcommand{\arraystretch}{1.2}
+    \renewcommand{\arraystretch}{1.4}
 	\begin{tabular}{p{2.0cm}p{3.0cm}p{2.6cm}p{2.0cm}p{3cm}}
 		\toprule
 		$T$分析类型 & $D$必须包含 & $G$典型取值 & $\hat{V}$默认 & $O_a$常用算子 \\
@@ -229,10 +231,7 @@ AP-Schema的构建过程本质上是从开放式自然语言分析需求到结�
 
 上述映射过程可统一表述为：
 \begin{equation}
-    \begin{cases}
-        A^{(0)} = \text{LLM}_{\text{plan}}(x, K, \mathcal{C}), \\
-A = \text{BuildPlan}(x, K)
-    \end{cases}
+        A^{(0)} = \text{LLM}_{\text{plan}}(x, K, \mathcal{C}), \quad A = \text{BuildPlan}(x, K)
 \label{eq:build_plan}
 \end{equation}
 AP-Schema的完整生成流程如算法\ref{alg:analysis_planning}所示。
@@ -266,18 +265,14 @@ AP-Schema的完整生成流程如算法\ref{alg:analysis_planning}所示。
 
 通过上述四步，系统可将“分析近两年各区一般公共预算收入的月度趋势，并给出同比变化”这一自然语言需求映射为表\ref{tab:ap_schema_example}所示的完整AP-Schema实例。
 
-最终AP-Schema的引入带来三方面收益。
-其一，它将分析任务中的隐式约束显式化，减少系统在后续步骤中遗漏关键分析要求的风险；
-其二，它为数据查询与数据分析模块之间建立了统一接口，使“取什么数据”和“如何组织分析结果”能够在同一规划框架下协同工作；
-其三，字段约束关系和完备性校验为规划质量提供了可检查的保障机制，使系统在面对表述不完整或存在歧义的用户输入时仍能生成结构完整的分析规划。
-
 \begin{table}[htbp]
 	\setlength{\abovecaptionskip}{5pt}
 	\setlength{\belowcaptionskip}{5pt}
 	\caption{自然语言分析需求到AP-Schema的映射示例}\label{tab:ap_schema_example}
 	\centering
 	\footnotesize
-	\begin{tabular}{p{1.5cm}p{10.5cm}}
+    \renewcommand{\arraystretch}{1.2}
+	\begin{tabular}{p{2cm}p{12.0cm}}
 		\toprule
 		字段 & 映射结果 \\
 		\midrule
@@ -293,6 +288,11 @@ AP-Schema的完整生成流程如算法\ref{alg:analysis_planning}所示。
 			\bottomrule
 		\end{tabular}
 \end{table}
+
+最终AP-Schema的引入带来三方面收益。
+其一，它将分析任务中的隐式约束显式化，减少系统在后续步骤中遗漏关键分析要求的风险；
+其二，它为数据查询与数据分析模块之间建立了统一接口，使“取什么数据”和“如何组织分析结果”能够在同一规划框架下协同工作；
+其三，字段约束关系和完备性校验为规划质量提供了可检查的保障机制，使系统在面对表述不完整或存在歧义的用户输入时仍能生成结构完整的分析规划。
 
 \section{基于查询增强的分析任务分解方法}
 上一节完成了从自然语言需求到AP-Schema的结构化规划构建。本节进一步讨论如何将规划中的操作分配给查询层与分析层，并给出两层之间的结果衔接方式。

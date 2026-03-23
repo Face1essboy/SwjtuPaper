@@ -1,0 +1,64 @@
+@startuml
+title 论文章节规划架构图
+
+top to bottom direction
+skinparam defaultFontName "PingFang SC"
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam rectangle {
+  RoundCorner 18
+  BorderColor #666666
+  FontColor #222222
+}
+skinparam package {
+  BorderColor #888888
+  FontColor #222222
+}
+skinparam ArrowColor #555555
+skinparam ArrowThickness 1.3
+skinparam BackgroundColor white
+
+rectangle "论文主题\n面向政务场景的大模型数据查询与分析方法研究" as Thesis #FFF2CC
+
+package "第一部分：问题提出与基础铺垫" #EAF3FF {
+  rectangle "第1章 绪论\n- 研究背景与意义\n- 研究挑战与问题定义\n- 研究内容与章节安排" as C1 #EAF3FF
+  rectangle "第2章 相关理论与技术\n- 大语言模型\n- Text-to-SQL\n- Text-to-Analysis\n- 多智能体协同" as C2 #EAF3FF
+}
+
+package "第二部分：核心方法研究" #EAF7EA {
+  rectangle "第3章 政务数据查询生成方法\n研究点一：先查准\n- LA-Schema\n- 异构协同生成\n- 查询修复与候选判别" as C3 #DDF0DD
+  rectangle "第4章 政务数据分析方法\n研究点二：再分析\n- AP-Schema\n- 查询增强任务分解\n- 算子链与规范化结果生成" as C4 #DDF0DD
+}
+
+package "第三部分：系统实现与总结" #FFF1E6 {
+  rectangle "第5章 政务智能问数系统设计与实现\n- 系统架构设计\n- 查询与分析模块集成\n- 功能展示与落地验证" as C5 #FCE5CD
+  rectangle "第6章 结论与展望\n- 全文总结\n- 创新点归纳\n- 后续研究方向" as C6 #FCE5CD
+}
+
+note right of Thesis
+总体主线：
+提出问题 -> 理论支撑 -> 先查准 -> 再分析 -> 系统落地 -> 总结展望
+end note
+
+Thesis --> C1
+Thesis --> C2
+
+C1 --> C3 : 提出研究问题
+C1 --> C4 : 提出分析需求
+C2 --> C3 : 提供理论基础
+C2 --> C4 : 提供技术基础
+
+C3 --> C4 : 可靠取数能力支撑规范分析
+C3 --> C5 : 查询模块落地
+C4 --> C5 : 分析模块落地
+C5 --> C6 : 系统验证与全文总结
+
+note bottom of C3
+核心目标：解决自然语言到 SQL 的可靠映射
+end note
+
+note bottom of C4
+核心目标：解决查到数据后的规范分析与结果生成
+end note
+
+@enduml

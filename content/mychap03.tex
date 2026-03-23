@@ -505,7 +505,7 @@ T_{ij}=(Q_u,H_u,c_i,c_j,S^{*}_{ij},y_{ij}),
 
 \subsection{判别模型训练}
 
-系统以Qwen-8B为基础模型构建选择智能体$\text{Agent}_s$，并采用指令式监督微调方式\cite{123}(Instruction Supervised Fine-Tuning,ISFT)进行训练。
+系统以Qwen-8B为基础模型构建选择智能体$\text{Agent}_s$，并采用指令式监督微调方式\cite{isft2024placeholder}(Instruction Supervised Fine-Tuning,ISFT)进行训练。
 对于每个训练样本$T_{ij}$，系统将用户问题$Q_u$、辅助提示信息$H_u$、模式并集$S^{*}_{ij}$以及候选SQL$(c_i,c_j)$按统一模板组织为输入序列，要求模型输出二元判别结果，以表示两者中哪一个更可能为正确查询。由此，$\text{Agent}_s$学习的是如下条件偏好概率：
 \begin{equation}
 p_{\theta}(y_{ij}=1 \mid Q_u,H_u,S^{*}_{ij},c_i,c_j),
