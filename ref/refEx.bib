@@ -1,12 +1,16 @@
 % Encoding: UTF-8
 
 @inproceedings{vaswani2017Transformer_pages,
-  title={Attention is all you need},
-  author={Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N and Kaiser, {\L}ukasz and Polosukhin, Illia},
-  booktitle={Advances in neural information processing systems},
-  volume={30},
-  pages={1--11},
-  year={2017}
+author = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N. and Kaiser, \L{}ukasz and Polosukhin, Illia},
+title = {Attention is all you need},
+year = {2017},
+isbn = {9781510860964},
+address = {Red Hook, NY, USA},
+abstract = {The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles, by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.0 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature.},
+booktitle = {Proceedings of the 31st International Conference on Neural Information Processing Systems},
+pages = {6000–6010},
+numpages = {11},
+series = {NIPS'17}
 }
 
 %% ===== 第三章与第四章共用文献 =====
@@ -48,13 +52,22 @@
 
 %% ===== 第三章文献 =====
 
-@website{chen2024bge,
-  title={{BGE} {M3}-Embedding: multi-lingual, multi-functionality, multi-granularity text embeddings through self-knowledge distillation},
-  author={Chen, Jianlv and Xiao, Shitao and Zhang, Peitian and Luo, Kun and Lian, Defu and Liu, Zheng},
-  publisher={arXiv},
-  year={2024},
-  note={[2026-03-24]. arXiv:2402.03216},
-  howpublished={https://arxiv.org/abs/2402.03216}
+@inproceedings{chen2024bge,
+    title = "{M}3-Embedding: Multi-Linguality, Multi-Functionality, Multi-Granularity Text Embeddings Through Self-Knowledge Distillation",
+    author = "Chen, Jianlyu  and
+      Xiao, Shitao  and
+      Zhang, Peitian  and
+      Luo, Kun  and
+      Lian, Defu  and
+      Liu, Zheng",
+    booktitle = "Findings of the Association for Computational Linguistics: ACL 2024",
+    month = aug,
+    year = "2024",
+    address = "Bangkok, Thailand",
+    url = "https://aclanthology.org/2024.findings-acl.137/",
+    doi = "10.18653/v1/2024.findings-acl.137",
+    pages = "2318--2335",
+    abstract = "In this paper, we introduce a new embedding model called M3-Embedding, which is distinguished for its versatility in Multi-Linguality, Multi-Functionality, and Multi-Granularity. It provides a uniform support for the semantic retrieval of more than 100 working languages. It can simultaneously accomplish the three common retrieval functionalities: dense retrieval, multi-vector retrieval, and sparse retrieval. Besides, it is also capable of processing inputs of different granularities, spanning from short sentences to long documents of up to 8,192 tokens. The effective training of M3-Embedding presents a series of technical contributions. Notably, we propose a novel self-knowledge distillation approach, where the relevance scores from different retrieval functionalities can be integrated as the teacher signal to enhance the training quality. We also optimize the batching strategy, which enables a large batch size and high training throughput to improve the discriminativeness of embeddings. M3-Embedding exhibits a superior performance in our experiment, leading to new state-of-the-art results on multilingual, cross-lingual, and long-document retrieval benchmarks."
 }
 
 @article{HNSW,
@@ -93,13 +106,24 @@ numpages = {14}
   howpublished={https://arxiv.org/abs/2411.08599}
 }
 
-@website{xie2025opensearch,
-  title={{OpenSearch-SQL}: enhancing text-to-{SQL} with dynamic few-shot and consistency alignment},
-  author={Xie, Xiangjin and Zhang, Guangwei and Wang, Feng and others},
-  publisher={arXiv},
-  year={2025},
-  note={[2026-03-24]. arXiv:2502.14913},
-  howpublished={https://arxiv.org/abs/2502.14913}
+@article{xie2025opensearch,
+author = {Xie, Xiangjin and Xu, Guangwei and Zhao, Lingyan and Guo, Ruijie},
+title = {OpenSearch-SQL: Enhancing Text-to-SQL with Dynamic Few-shot and Consistency Alignment},
+year = {2025},
+issue_date = {June 2025},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {3},
+number = {3},
+url = {https://doi.org/10.1145/3725331},
+doi = {10.1145/3725331},
+abstract = {Although multi-agent collaborative Large Language Models (LLMs) have achieved significant breakthroughs in the Text-to-SQL task, their performance is still constrained by various factors. These factors include the incompleteness of the framework, failure to follow instructions, and model hallucinations. To address these problems, we propose OpenSearch-SQL, which divides the Text-to-SQL task into four main modules: Preprocessing, Extraction, Generation, and Refinement, along with an Alignment module based on a consistency alignment mechanism. This architecture aligns the inputs and outputs of agents through the Alignment module, reducing failures in instruction following and hallucination. Furthermore, we introduce SQL-Like (an intermediate language), optimize the structured Chain-of-Thought (CoT) based on SQL-Like, and develop a dynamic few-shot strategy via self-taught Query-CoT-SQL. In terms of model selection, we directly applied the base LLMs without any post-training, thereby simplifying the task chain and enhancing the framework's portability. Experimental results show that OpenSearch-SQL achieves an execution accuracy(EX) of 69.3\% on the BIRD development set, 72.28\% on the test set, and a reward-based validity efficiency score (R-VES) of 69.36\%, with all three metrics ranking first at the time of submission. These results demonstrate the comprehensive advantages of the proposed method in both effectiveness and efficiency.},
+journal = {Proc. ACM Manag. Data},
+month = jun,
+articleno = {194},
+numpages = {24},
+pages = {1--24},
+keywords = {multi-agent, retrieval, text-to-sql}
 }
 
 
@@ -111,22 +135,30 @@ numpages = {14}
   url       = {https://iclr.cc/virtual/2025/poster/30489}
 }
 
-@website{li2025alpha,
-  title={Alpha-{SQL}: zero-shot text-to-{SQL} via Monte Carlo tree search},
-  author={Li, Boyan and Mou, Yuyu and Li, Jian and others},
-  publisher={arXiv},
-  year={2025},
-  note={[2026-03-24]. arXiv:2502.17600},
-  howpublished={https://arxiv.org/abs/2502.17600}
+@inproceedings{li2025alpha,
+  author    = {Li, Boyan and Zhang, Jiayi and Fan, Ju and Xu, Yanwei and Chen, Chong and Tang, Nan and Luo, Yuyu},
+  title     = {Alpha-SQL: Zero-Shot Text-to-SQL using Monte Carlo Tree Search},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year      = {2025},
+  url       = {https://icml.cc/virtual/2025/poster/44263}
 }
 
-@website{li2025omnisql,
-  title={{OmniSQL}: synthesizing high-quality text-to-{SQL} data at scale},
-  author={Li, Jiaqi and Hui, Binyuan and others},
-  publisher={arXiv},
-  year={2025},
-  note={[2026-03-24]. arXiv:2503.02164},
-  howpublished={https://arxiv.org/abs/2503.02164}
+@article{li2025omnisql,
+author = {Li, Haoyang and Wu, Shang and Zhang, Xiaokang and Huang, Xinmei and Zhang, Jing and Jiang, Fuxin and Wang, Shuai and Zhang, Tieying and Chen, Jianjun and Shi, Rui and Chen, Hong and Li, Cuiping},
+title = {OmniSQL: Synthesizing High-Quality Text-to-SQL Data at Scale},
+year = {2025},
+issue_date = {July 2025},
+publisher = {VLDB Endowment},
+volume = {18},
+number = {11},
+issn = {2150-8097},
+url = {https://doi.org/10.14778/3749646.3749723},
+doi = {10.14778/3749646.3749723},
+abstract = {Text-to-SQL, the task of translating natural language questions into SQL queries, plays a crucial role in enabling non-experts to interact with databases. While recent advancements in large language models (LLMs) have significantly enhanced text-to-SQL performance, existing approaches face notable limitations in real-world text-to-SQL applications. Prompting-based methods often depend on closed-source LLMs, which are expensive, raise privacy concerns, and lack customization. Fine-tuning-based methods, on the other hand, suffer from poor generalizability due to the limited coverage of publicly available training data. To overcome these challenges, we propose a novel and scalable text-to-SQL data synthesis framework for automatically synthesizing large-scale, high-quality, and diverse datasets without extensive human intervention. Using this framework, we introduce SynSQL-2.5M, the first million-scale text-to-SQL dataset, containing 2.5 million samples spanning over 16,000 synthetic databases. Each sample includes a database, SQL query, natural language question, and chain-of-thought (CoT) solution. Leveraging SynSQL-2.5M, we develop OmniSQL, a powerful open-source text-to-SQL model available in three sizes: 7B, 14B, and 32B. Extensive evaluations across nine datasets demonstrate that OmniSQL achieves state-of-the-art performance, matching or surpassing leading closed-source and open-source LLMs, including GPT-4o and DeepSeek-V3, despite its smaller size. We release all code, datasets, and models to support further research.},
+journal = {Proc. VLDB Endow.},
+month = jul,
+pages = {4695–4709},
+numpages = {15}
 }
 
 @website{deepseek2024,
@@ -163,13 +195,12 @@ series = {NIPS '23}
     abstract = "We present \textit{Spider}, a large-scale complex and cross-domain semantic parsing and text-to-SQL dataset annotated by 11 college students. It consists of 10,181 questions and 5,693 unique complex SQL queries on 200 databases with multiple tables covering 138 different domains. We define a new complex and cross-domain semantic parsing and text-to-SQL task so that different complicated SQL queries and databases appear in train and test sets. In this way, the task requires the model to generalize well to both new SQL queries and new database schemas. Therefore, Spider is distinct from most of the previous semantic parsing tasks because they all use a single database and have the exact same program in the train set and the test set. We experiment with various state-of-the-art models and the best model achieves only 9.7{\%} exact matching accuracy on a database split setting. This shows that Spider presents a strong challenge for future research. Our dataset and task with the most recent updates are publicly available at \url{https://yale-lily.github.io/seq2sql/spider}."
 }
 
-@website{talaei2024chess,
-  title={{CHESS}: contextual harnessing for efficient {SQL} synthesis},
-  author={Talaei, Shayan and Pourreza, Mohammadreza and Chang, Yu-Chen and Mirhoseini, Azalia and Saberi, Amin},
-  publisher={arXiv},
-  year={2024},
-  note={[2026-03-24]. arXiv:2405.16755},
-  howpublished={https://arxiv.org/abs/2405.16755}
+@inproceedings{talaei2024chess,
+  author    = {Talaei, Shayan and Pourreza, Mohammadreza and Chang, Yu-Chen and Mirhoseini, Azalia and Saberi, Amin},
+  title     = {CHESS: Contextual Harnessing for Efficient SQL Synthesis},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year      = {2025},
+  url       = {https://icml.cc/virtual/2025/49375}
 }
 
 %% ===== 第四章文献 =====
@@ -222,33 +253,47 @@ series = {NIPS '23}
   year={2024}
 }
 
-@website{dibia2023lida,
-  title={{LIDA}: a tool for automatic generation of grammar-agnostic visualizations and infographics using large language models},
-  author={Dibia, Victor},
-  publisher={arXiv},
-  year={2023},
-  note={[2026-03-24]. arXiv:2303.02927},
-  howpublished={https://arxiv.org/abs/2303.02927}
+@inproceedings{dibia2023lida,
+    title = "{LIDA}: A Tool for Automatic Generation of Grammar-Agnostic Visualizations and Infographics using Large Language Models",
+    author = "Dibia, Victor",
+    booktitle = "Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 3: System Demonstrations)",
+    month = jul,
+    year = "2023",
+    address = "Toronto, Canada",
+    url = "https://aclanthology.org/2023.acl-demo.11/",
+    doi = "10.18653/v1/2023.acl-demo.11",
+    pages = "113--126",
+    abstract = "Systems that support users in the automatic creation of visualizations must address several subtasks - understand the semantics of data, enumerate relevant visualization goals and generate visualization specifications. In this work, we pose visualization generation as a multi-stage generation problem and argue that well-orchestrated pipelines based on large language models (LLMs) and image generation models (IGMs) are suitable to addressing these tasks. We present LIDA, a novel tool for generating grammar-agnostic visualizations and infographics. LIDA comprises of 4 modules - A SUMMARIZER that converts data into a rich but compact natural language summary, a GOAL EXPLORER that enumerates visualization goals given the data, a VISGENERATOR that generates, refines, executes and filters visualization code and an INFOGRAPHER module that yields data-faithful stylized graphics using IGMs. LIDA provides a python api, and a hybrid user interface (direct manipulation and multilingual natural language) for interactive chart, infographics and data story generation. Code and demo are available at this url - \url{https://microsoft.github.io/lida/}"
 }
 
-@article{maddigan2023chat2vis,
-  title={{Chat2VIS}: generating data visualisations via natural language using {ChatGPT}, {Codex} and {GPT-4}},
+@ARTICLE{maddigan2023chat2vis,
   author={Maddigan, Paula and Susnjak, Teo},
-  journal={IEEE Access},
-  volume={11},
-  pages={45181--45193},
+  journal={IEEE Access}, 
+  title={Chat2VIS: Generating Data Visualizations via Natural Language Using ChatGPT, Codex and GPT-3 Large Language Models}, 
   year={2023},
-  publisher={IEEE}
-}
+  volume={11},
+  pages={45181-45193},
+  keywords={Data visualization;Task analysis;Data models;Codes;Chatbots;Transformers;Market research;Natural language processing;Text recognition;ChatGPT;codex;end-to-end visualisations from natural language;GPT-3;large language models;natural language interfaces;text-to-visualisation},
+  doi={10.1109/ACCESS.2023.3274199}
+  }
+
 
 %% ===== 第二章文献：LLM基础 =====
 
 @inproceedings{devlin2019bert,
-  title={{BERT}: pre-training of deep bidirectional transformers for language understanding},
-  author={Devlin, Jacob and Chang, Ming-Wei and Lee, Kenton and Toutanova, Kristina},
-  booktitle={Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies},
-  pages={4171--4186},
-  year={2019}
+    title = "{BERT}: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+    author = "Devlin, Jacob  and
+      Chang, Ming-Wei  and
+      Lee, Kenton  and
+      Toutanova, Kristina",
+    booktitle = "Proceedings of the 2019 Conference of the North {A}merican Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers)",
+    month = jun,
+    year = "2019",
+    address = "Minneapolis, Minnesota",
+    url = "https://aclanthology.org/N19-1423/",
+    doi = "10.18653/v1/N19-1423",
+    pages = "4171--4186",
+    abstract = "We introduce a new language representation model called BERT, which stands for Bidirectional Encoder Representations from Transformers. Unlike recent language representation models (Peters et al., 2018a; Radford et al., 2018), BERT is designed to pre-train deep bidirectional representations from unlabeled text by jointly conditioning on both left and right context in all layers. As a result, the pre-trained BERT model can be fine-tuned with just one additional output layer to create state-of-the-art models for a wide range of tasks, such as question answering and language inference, without substantial task-specific architecture modifications. BERT is conceptually simple and empirically powerful. It obtains new state-of-the-art results on eleven natural language processing tasks, including pushing the GLUE score to 80.5 (7.7 point absolute improvement), MultiNLI accuracy to 86.7{\%} (4.6{\%} absolute improvement), SQuAD v1.1 question answering Test F1 to 93.2 (1.5 point absolute improvement) and SQuAD v2.0 Test F1 to 83.1 (5.1 point absolute improvement)."
 }
 
 @techreport{radford2018gpt,
@@ -291,39 +336,59 @@ series = {NIPS '20}
 }
 
 @article{raffel2020t5,
-  title={Exploring the limits of transfer learning with a unified text-to-text transformer},
-  author={Raffel, Colin and Shazeer, Noam and Roberts, Adam and Lee, Katherine and Narang, Sharan and Matena, Michael and Zhou, Yanqi and Li, Wei and Liu, Peter J},
-  journal={Journal of Machine Learning Research},
-  volume={21},
-  number={140},
-  pages={1--67},
-  year={2020}
+author = {Raffel, Colin and Shazeer, Noam and Roberts, Adam and Lee, Katherine and Narang, Sharan and Matena, Michael and Zhou, Yanqi and Li, Wei and Liu, Peter J.},
+title = {Exploring the limits of transfer learning with a unified text-to-text transformer},
+year = {2020},
+issue_date = {January 2020},
+volume = {21},
+number = {1},
+issn = {1532-4435},
+abstract = {Transfer learning, where a model is first pre-trained on a data-rich task before being fine-tuned on a downstream task, has emerged as a powerful technique in natural language processing (NLP). The effectiveness of transfer learning has given rise to a diversity of approaches, methodology, and practice. In this paper, we explore the landscape of transfer learning techniques for NLP by introducing a unified framework that converts all text-based language problems into a text-to-text format. Our systematic study compares pretraining objectives, architectures, unlabeled data sets, transfer approaches, and other factors on dozens of language understanding tasks. By combining the insights from our exploration with scale and our new "Colossal Clean Crawled Corpus", we achieve state-of-the-art results on many benchmarks covering summarization, question answering, text classification, and more. To facilitate future work on transfer learning for NLP, we release our data set, pre-trained models, and code.},
+journal = {J. Mach. Learn. Res.},
+month = jan,
+articleno = {140},
+numpages = {67},
+pages = {5485--5551},
+keywords = {transfer learning, natural language processing, multi-task learning, attention based models, deep learning}
 }
 
 @inproceedings{ouyang2022instructgpt,
-  title={Training language models to follow instructions with human feedback},
-  author={Ouyang, Long and Wu, Jeffrey and Jiang, Xu and Almeida, Diogo and Wainwright, Carroll and Mishkin, Pamela and Zhang, Chong and Agarwal, Sandhini and Slama, Katarina and Ray, Alex and others},
-  booktitle={Advances in Neural Information Processing Systems},
-  volume={35},
-  pages={27730--27744},
-  year={2022}
+author = {Ouyang, Long and Wu, Jeff and Jiang, Xu and Almeida, Diogo and Wainwright, Carroll L. and Mishkin, Pamela and Zhang, Chong and Agarwal, Sandhini and Slama, Katarina and Ray, Alex and Schulman, John and Hilton, Jacob and Kelton, Fraser and Miller, Luke and Simens, Maddie and Askell, Amanda and Welinder, Peter and Christiano, Paul and Leike, Jan and Lowe, Ryan},
+title = {Training language models to follow instructions with human feedback},
+year = {2022},
+isbn = {9781713871088},
+address = {Red Hook, NY, USA},
+abstract = {Making language models bigger does not inherently make them better at following a user's intent. For example, large language models can generate outputs that are untruthful, toxic, or simply not helpful to the user. In other words, these models are not aligned with their users. In this paper, we show an avenue for aligning language models with user intent on a wide range of tasks by fine-tuning with human feedback. Starting with a set of labeler-written prompts and prompts submitted through a language model API, we collect a dataset of labeler demonstrations of the desired model behavior, which we use to fine-tune GPT-3 using supervised learning. We then collect a dataset of rankings of model outputs, which we use to further fine-tune this supervised model using reinforcement learning from human feedback. We call the resulting models InstructGPT. In human evaluations on our prompt distribution, outputs from the 1.3B parameter InstructGPT model are preferred to outputs from the 175B GPT-3, despite having 100x fewer parameters. Moreover, InstructGPT models show improvements in truthfulness and reductions in toxic output generation while having minimal performance regressions on public NLP datasets. Even though InstructGPT still makes simple mistakes, our results show that fine-tuning with human feedback is a promising direction for aligning language models with human intent.},
+booktitle = {Proceedings of the 36th International Conference on Neural Information Processing Systems},
+articleno = {2011},
+numpages = {15},
+volume={35},
+pages={27730--27744},
 }
 
 @inproceedings{wei2022flan,
-  title={Finetuned language models are zero-shot learners},
-  author={Wei, Jason and Bosma, Maarten and Zhao, Vincent Y and Guu, Kelvin and Yu, Adams Wei and Lester, Brian and Du, Nan and Dai, Andrew M and Le, Quoc V},
-  booktitle={International Conference on Learning Representations},
-  year={2022}
+  author    = {Wei, Jason and Bosma, Maarten and Zhao, Vincent and Guu, Kelvin and Yu, Wei and Lester, Brian and Du, Nan and Dai, Andrew and Le, Quoc V.},
+  title     = {Finetuned Language Models are Zero-Shot Learners},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2022},
+  url       = {https://iclr.cc/virtual/2022/oral/6255}
 }
 
 @article{chung2022flanT5,
-  title={Scaling instruction-finetuned language models},
-  author={Chung, Hyung Won and Hou, Le and Longpre, Shayne and Zoph, Barret and Tay, Yi and Fedus, William and Li, Yunxuan and Wang, Xuezhi and Dehghani, Mostafa and Brahma, Siddhartha and others},
-  journal={Journal of Machine Learning Research},
-  volume={25},
-  number={70},
-  pages={1--53},
-  year={2024}
+author = {Chung, Hyung Won and Hou, Le and Longpre, Shayne and Zoph, Barret and Tai, Yi and Fedus, William and Li, Yunxuan and Wang, Xuezhi and Dehghani, Mostafa and Brahma, Siddhartha and Webson, Albert and Gu, Shixiang Shane and Dai, Zhuyun and Suzgun, Mirac and Chen, Xinyun and Chowdhery, Aakanksha and Castro-Ros, Alex and Pellat, Marie and Robinson, Kevin and Valter, Dasha and Narang, Sharan and Mishra, Gaurav and Yu, Adams and Zhao, Vincent and Huang, Yanping and Dai, Andrew and Yu, Hongkun and Petrov, Slav and Chi, Ed H. and Dean, Jeff and Devlin, Jacob and Roberts, Adam and Zhou, Denny and Le, Quoc V. and Wei, Jason},
+title = {Scaling instruction-finetuned language models},
+year = {2024},
+issue_date = {January 2024},
+volume = {25},
+number = {1},
+issn = {1532-4435},
+abstract = {Finetuning language models on a collection of datasets phrased as instructions has been shown to improve model performance and generalization to unseen tasks. In this paper we explore instruction finetuning with a particular focus on (1) scaling the number of tasks, (2) scaling the model size, and (3) finetuning on chain-of-thought data. We find that instruction finetuning with the above aspects dramatically improves performance on a variety of model classes (PaLM, T5, U-PaLM), prompting setups (zero-shot, few-shot, CoT), and evaluation benchmarks (MMLU, BBH, TyDiQA, MGSM, open-ended generation, RealToxicityPrompts). For instance, Flan-PaLM 540B instruction-finetuned on 1.8K tasks outperforms PaLM 540B by a large margin (+9.4\% on average). Flan-PaLM 540B achieves state-of-the-art performance on several benchmarks (at time of release), such as 75.2\% on five-shot MMLU. We also publicly release Flan-T5 checkpoints, which achieve strong few-shot performance even compared to much larger models, such as PaLM 62B. Overall, instruction finetuning is a general method for improving the performance and usability of pretrained language models.},
+journal = {J. Mach. Learn. Res.},
+month = jan,
+articleno = {70},
+numpages = {53},
+pages = {3381--3433},
+keywords = {natural language processing, language models, instruction finetuning, chain-of-thought reasoning, bias \& toxicity}
 }
 
 @website{zhao2023llmsurvey,
@@ -347,10 +412,11 @@ series = {NIPS '20}
 }
 
 @inproceedings{wang2023selfconsistency,
-  title={Self-consistency improves chain of thought reasoning in language models},
-  author={Wang, Xuezhi and Wei, Jason and Schuurmans, Dale and Le, Quoc and Chi, Ed and Narang, Sharan and Chowdhery, Aakanksha and Zhou, Denny},
-  booktitle={International Conference on Learning Representations},
-  year={2023}
+  author    = {Wang, Xuezhi and Wei, Jason and Schuurmans, Dale and Le, Quoc V. and Chi, Ed H. and Narang, Sharan and Chowdhery, Aakanksha and Zhou, Denny},
+  title     = {Self-Consistency Improves Chain of Thought Reasoning in Language Models},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2023},
+  url       = {https://iclr.cc/virtual/2023/poster/11718}
 }
 
 @inproceedings{yao2023tot,
@@ -362,13 +428,29 @@ series = {NIPS '20}
   year={2024}
 }
 
-@website{dong2023icl_survey,
-  title={A survey on in-context learning},
-  author={Dong, Qingxiu and Li, Lei and Dai, Damai and Zheng, Ce and Ma, Jingyuan and Li, Rui and Xia, Heming and Xu, Jingjing and Wu, Zhiyong and Liu, Tianyu and others},
-  publisher={arXiv},
-  year={2023},
-  note={[2026-03-24]. arXiv:2301.00234},
-  howpublished={https://arxiv.org/abs/2301.00234}
+@inproceedings{dong2023icl_survey,
+    title = "A Survey on In-context Learning",
+    author = "Dong, Qingxiu  and
+      Li, Lei  and
+      Dai, Damai  and
+      Zheng, Ce  and
+      Ma, Jingyuan  and
+      Li, Rui  and
+      Xia, Heming  and
+      Xu, Jingjing  and
+      Wu, Zhiyong  and
+      Chang, Baobao  and
+      Sun, Xu  and
+      Li, Lei  and
+      Sui, Zhifang",
+    booktitle = "Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing",
+    month = nov,
+    year = "2024",
+    address = "Miami, Florida, USA",
+    url = "https://aclanthology.org/2024.emnlp-main.64/",
+    doi = "10.18653/v1/2024.emnlp-main.64",
+    pages = "1107--1128",
+    abstract = "With the increasing capabilities of large language models (LLMs), in-context learning (ICL) has emerged as a new paradigm for natural language processing (NLP), where LLMs make predictions based on contexts augmented with a few examples. It has been a significant trend to explore ICL to evaluate and extrapolate the ability of LLMs. In this paper, we aim to survey and summarize the progress and challenges of ICL. We first present a formal definition of ICL and clarify its correlation to related studies. Then, we organize and discuss advanced techniques, including training strategies, prompt designing strategies, and related analysis. Additionally, we explore various ICL application scenarios, such as data engineering and knowledge updating. Finally, we address the challenges of ICL and suggest potential directions for further research. We hope that our work can encourage more research on uncovering how ICL works and improving ICL."
 }
 
 %% ===== 第二章文献：工具调用 =====
@@ -382,29 +464,46 @@ series = {NIPS '20}
   year={2024}
 }
 
-@website{patil2023gorilla,
-  title={Gorilla: large language model connected with massive {API}s},
-  author={Patil, Shishir G and Zhang, Tianjun and Wang, Xin and Gonzalez, Joseph E},
-  publisher={arXiv},
-  year={2023},
-  note={[2026-03-24]. arXiv:2305.15334},
-  howpublished={https://arxiv.org/abs/2305.15334}
+@inproceedings{patil2023gorilla,
+author = {Patil, Shishir G. and Zhang, Tianjun and Wang, Xin and Gonzalez, Joseph E.},
+title = {Gorilla: large language model connected with massive APIs},
+year = {2024},
+isbn = {9798331314385},
+address = {Red Hook, NY, USA},
+abstract = {Large Language Models (LLMs) have seen an impressive wave of advances, with models now excelling in a variety of tasks, such as mathematical reasoning and program synthesis. However, their potential to effectively use tools via API calls remains unfulfilled. This is a challenging task even for today's state-of-the-art LLMs such as GPT-4 largely due to their unawareness of what APIs are available and how to use them in a frequently updated tool set. We develop Gorilla, a finetuned LLaMA model that surpasses the performance of GPT-4 on writing API calls. Trained with the novel Retriever Aware Training (RAT), when combined with a document retriever, Gorilla demonstrates a strong capability to adapt to test-time document changes, allowing flexible user updates or version changes. It also substantially mitigates the issue of hallucination, commonly encountered when prompting LLMs directly. To evaluate the model's ability, we introduce APIBench, a comprehensive dataset consisting of HuggingFace, TorchHub, and TensorHub APIs. The successful integration of the retrieval system with Gorilla demonstrates the potential for LLMs to use tools more accurately, keep up with frequently updated documentation, and consequently increase the reliability and applicability of their outputs. Gorilla's code, model, data, and demo are available at: https://gorilla.cs.berkeley.edu},
+booktitle = {Proceedings of the 38th International Conference on Neural Information Processing Systems},
+articleno = {4020},
+numpages = {22},
+pages = {126544--126565},
+location = {Vancouver, BC, Canada},
 }
 
 @inproceedings{yao2023react,
   title={{ReAct}: synergizing reasoning and acting in language models},
   author={Yao, Shunyu and Zhao, Jeffrey and Yu, Dian and Du, Nan and Shafran, Izhak and Narasimhan, Karthik and Cao, Yuan},
-  booktitle={International Conference on Learning Representations},
+  booktitle={International Conference on Learning Representations (ICLR)},
   year={2023}
 }
 
-@website{qin2024toollearning,
-  title={Tool learning with foundation models},
-  author={Qin, Yujia and Liang, Shengding and Ye, Yining and Zhu, Kunlun and Yan, Lan and Lu, Yaxi and Lin, Yankai and Cong, Xin and Tang, Xiangru and Qian, Bill and others},
-  publisher={arXiv},
-  year={2024},
-  note={[2026-03-24]. arXiv:2304.08354},
-  howpublished={https://arxiv.org/abs/2304.08354}
+
+@article{qin2024toollearning,
+author = {Qin, Yujia and Hu, Shengding and Lin, Yankai and Chen, Weize and Ding, Ning and Cui, Ganqu and Zeng, Zheni and Zhou, Xuanhe and Huang, Yufei and Xiao, Chaojun and Han, Chi and Fung, Yi Ren and Su, Yusheng and Wang, Huadong and Qian, Cheng and Tian, Runchu and Zhu, Kunlun and Liang, Shihao and Shen, Xingyu and Xu, Bokai and Zhang, Zhen and Ye, Yining and Li, Bowen and Tang, Ziwei and Yi, Jing and Zhu, Yuzhang and Dai, Zhenning and Yan, Lan and Cong, Xin and Lu, Yaxi and Zhao, Weilin and Huang, Yuxiang and Yan, Junxi and Han, Xu and Sun, Xian and Li, Dahai and Phang, Jason and Yang, Cheng and Wu, Tongshuang and Ji, Heng and Li, Guoliang and Liu, Zhiyuan and Sun, Maosong},
+title = {Tool Learning with Foundation Models},
+year = {2024},
+issue_date = {April 2025},
+address = {New York, NY, USA},
+volume = {57},
+number = {4},
+issn = {0360-0300},
+url = {https://doi.org/10.1145/3704435},
+doi = {10.1145/3704435},
+abstract = {Humans possess an extraordinary ability to create and utilize tools. With the advent of foundation models, artificial intelligence systems have the potential to be equally adept in tool use as humans. This paradigm, which is dubbed as tool learning with foundation models, combines the strengths of tools and foundation models to achieve enhanced accuracy, efficiency, and automation in problem-solving. This article presents a systematic investigation and comprehensive review of tool learning. We first introduce the background of tool learning, including its cognitive origins, the paradigm shift of foundation models, and the complementary roles of tools and models. Then we recapitulate existing tool learning research and formulate a general framework: starting from understanding the user instruction, models should learn to decompose a complex task into several subtasks, dynamically adjust their plan through reasoning, and effectively conquer each sub-task by selecting appropriate tools. We also discuss how to train models for improved tool-use capabilities and facilitate generalization in tool learning. Finally, we discuss several open problems that require further investigation, such as ensuring trustworthy tool use, enabling tool creation with foundation models, and addressing personalization challenges. Overall, we hope this article could inspire future research in integrating tools with foundation models.},
+journal = {ACM Comput. Surv.},
+month = dec,
+articleno = {101},
+numpages = {40},
+pages = {1--40},
+keywords = {Tool use, foundation models, literature survey}
 }
 
 %% ===== 第二章文献：Text-to-SQL =====
@@ -508,14 +607,22 @@ pages = {36339--36348},
 }
 
 @article{li2024codes,
-  title={{CodeS}: towards building open-source language models for text-to-{SQL}},
-  author={Li, Haoyang and Zhang, Jing and Han, Hanbing and Li, Cuiping and Chen, Hong},
-  journal={Proceedings of the ACM on Management of Data},
-  volume={2},
-  number={3},
-  pages={1--28},
-  year={2024},
-  publisher={ACM}
+author = {Li, Haoyang and Zhang, Jing and Liu, Hanbing and Fan, Ju and Zhang, Xiaokang and Zhu, Jun and Wei, Renjie and Pan, Hongyan and Li, Cuiping and Chen, Hong},
+title = {CodeS: Towards Building Open-source Language Models for Text-to-SQL},
+year = {2024},
+issue_date = {June 2024},
+address = {New York, NY, USA},
+volume = {2},
+number = {3},
+url = {https://doi.org/10.1145/3654930},
+doi = {10.1145/3654930},
+abstract = {Language models have shown promising performance on the task of translating natural language questions into SQL queries (Text-to-SQL). However, most of the state-of-the-art (SOTA) approaches rely on powerful yet closed-source large language models (LLMs), such as ChatGPT and GPT-4, which may have the limitations of unclear model architectures, data privacy risks, and expensive inference overheads. To address the limitations, we introduce CodeS, a series of pre-trained language models with parameters ranging from 1B to 15B, specifically designed for the text-to-SQL task. CodeS is a fully open-source language model, which achieves superior accuracy with much smaller parameter sizes. This paper studies the research challenges in building CodeS. To enhance the SQL generation abilities of CodeS, we adopt an incremental pre-training approach using a specifically curated SQL-centric corpus. Based on this, we address the challenges of schema linking and rapid domain adaptation through strategic prompt construction and a bi-directional data augmentation technique. We conduct comprehensive evaluations on multiple datasets, including the widely used Spider benchmark, the newly released BIRD benchmark, robustness-diagnostic benchmarks such as Spider-DK, Spider-Syn, Spider-Realistic, and Dr.Spider, as well as two real-world datasets created for financial and academic applications. The experimental results show that our CodeS achieves new SOTA accuracy and robustness on nearly all challenging text-to-SQL benchmarks.},
+journal = {Proc. ACM Manag. Data},
+month = may,
+articleno = {127},
+pages = {1--28},
+numpages = {28},
+keywords = {language model, natural language interface for databases, text-to-SQL}
 }
 
 @article{王昊奋2024,
@@ -549,22 +656,20 @@ pages = {36339--36348},
   howpublished={https://arxiv.org/abs/2305.06161}
 }
 
-@website{luo2023wizardcoder,
-  title={{WizardCoder}: empowering code large language models with {Evol-Instruct}},
-  author={Luo, Ziyang and Xu, Can and Zhao, Pu and Sun, Qingfeng and Geng, Xiubo and Hu, Wenxiang and Tao, Chongyang and Ma, Jing and Lin, Qingwei and Jiang, Daxin},
-  publisher={arXiv},
-  year={2023},
-  note={[2026-03-24]. arXiv:2306.08568},
-  howpublished={https://arxiv.org/abs/2306.08568}
+@inproceedings{luo2023wizardcoder,
+  author    = {Luo, Ziyang and Xu, Can and Zhao, Pu and Sun, Qingfeng and Geng, Xiubo and Hu, Wenxiang and Tao, Chongyang and Ma, Jing and Lin, Qingwei and Jiang, Daxin},
+  title     = {WizardCoder: Empowering Code Large Language Models with Evol-Instruct},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2024},
+  url       = {https://iclr.cc/virtual/2024/poster/18519}
 }
 
-@website{zhang2024datacopilot,
-  title={Data-{Copilot}: bridging billions of data and humans with autonomous workflow},
-  author={Zhang, Wenqi and Dang, Yongliang and Liu, Binyuan and Lai, Tao and He, Liang and others},
-  publisher={arXiv},
-  year={2024},
-  note={[2026-03-24]. arXiv:2306.07209},
-  howpublished={https://arxiv.org/abs/2306.07209}
+@inproceedings{zhang2024datacopilot,
+  author    = {Zhang, Wenqi and Shen, Yongliang and Lu, Weiming and Zhuang, Yueting},
+  title     = {Data-Copilot: Bridging Billions of Data and Humans with Autonomous Workflow},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2024},
+  url       = {https://iclr.cc/virtual/2024/22171}
 }
 
 @website{huang2024tablegpt,
@@ -577,23 +682,41 @@ pages = {36339--36348},
 }
 
 @article{tian2024chartgpt,
-  title={{ChartGPT}: leveraging {LLM}s to generate charts from abstract natural language},
-  author={Tian, Yuan and Cui, Weiwei and Deng, Dazhen and Yi, Xinjing and Yang, Yurun and Zhang, Haidong and Wu, Yingcai},
-  journal={IEEE Transactions on Visualization and Computer Graphics},
-  volume={30},
-  number={1},
-  pages={1--11},
-  year={2024},
-  publisher={IEEE}
+author = {Tian, Yuan and Cui, Weiwei and Deng, Dazhen and Yi, Xinjing and Yang, Yurun and Zhang, Haidong and Wu, Yingcai},
+title = {ChartGPT: Leveraging LLMs to Generate Charts From Abstract Natural Language},
+year = {2025},
+issue_date = {March 2025},
+publisher = {IEEE Educational Activities Department},
+address = {USA},
+volume = {31},
+number = {3},
+issn = {1077-2626},
+url = {https://doi.org/10.1109/TVCG.2024.3368621},
+doi = {10.1109/TVCG.2024.3368621},
+abstract = {The use of natural language interfaces (NLIs) to create charts is becoming increasingly popular due to the intuitiveness of natural language interactions. One key challenge in this approach is to accurately capture user intents and transform them to proper chart specifications. This obstructs the wide use of NLI in chart generation, as users’ natural language inputs are generally abstract (i.e., ambiguous or under-specified), without a clear specification of visual encodings. Recently, pre-trained large language models (LLMs) have exhibited superior performance in understanding and generating natural language, demonstrating great potential for downstream tasks. Inspired by this major trend, we propose ChartGPT, generating charts from abstract natural language inputs. However, LLMs are struggling to address complex logic problems. To enable the model to accurately specify the complex parameters and perform operations in chart generation, we decompose the generation process into a step-by-step reasoning pipeline, so that the model only needs to reason a single and specific sub-task during each run. Moreover, LLMs are pre-trained on general datasets, which might be biased for the task of chart generation. To provide adequate visualization knowledge, we create a dataset consisting of abstract utterances and charts and improve model performance through fine-tuning. We further design an interactive interface for ChartGPT that allows users to check and modify the intermediate outputs of each step. The effectiveness of the proposed system is evaluated through quantitative evaluations and a user study.},
+journal = {IEEE Transactions on Visualization and Computer Graphics},
+month = mar,
+pages = {1731–1745},
+numpages = {15}
 }
 
-@website{tang2024struc,
-  title={Struc-{Bench}: are large language models really good at generating complex structured data?},
-  author={Tang, Xiangru and Gu, Yiming and Zhu, Yilun and Liu, Zhuosheng and Zhang, Yiming and Hu, Ganglin and Jiang, Zhao and Zheng, Xinyu and Wang, Lingyong and Shi, Kaiqiang and others},
-  publisher={arXiv},
-  year={2024},
-  note={[2026-03-24]. arXiv:2309.08963},
-  howpublished={https://arxiv.org/abs/2309.08963}
+@inproceedings{tang2024struc,
+    title = "Struc-Bench: Are Large Language Models Good at Generating Complex Structured Tabular Data?",
+    author = "Tang, Xiangru  and
+      Zong, Yiming  and
+      Phang, Jason  and
+      Zhao, Yilun  and
+      Zhou, Wangchunshu  and
+      Cohan, Arman  and
+      Gerstein, Mark",
+    booktitle = "Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 2: Short Papers)",
+    month = jun,
+    year = "2024",
+    address = "Mexico City, Mexico",
+    url = "https://aclanthology.org/2024.naacl-short.2/",
+    doi = "10.18653/v1/2024.naacl-short.2",
+    pages = "12--34",
+    abstract = "Despite the remarkable capabilities of Large Language Models (LLMs) like GPT-4, producing complex, structured tabular data remains challenging. Our study assesses LLMs' proficiency in structuring tables and introduces a novel fine-tuning method, cognizant of data structures, to bolster their performance. We unveil Struc-Bench, a comprehensive benchmark featuring prominent LLMs (GPT-NeoX-20B, GPT-3.5, GPT-4, and Vicuna), which spans text tables, HTML, and LaTeX formats. Our proposed FormatCoT aids in crafting format-specific instructions from the intended outputs to populate this benchmark. Addressing the gap in task-centered evaluation, we propose two innovative metrics, P-Score (Prompting Score) and H-Score (Heuristical Score), to more accurately gauge LLM performance. Our experiments show that applying our structure-aware fine-tuning to LLaMA-7B leads to substantial performance gains, outshining its LLM counterparts across most measures. In-depth error analysis and creating an ability map across six dimensions, coverage, formatting, reasoning, comprehension, pragmatics, and hallucination, highlight areas for future enhancements and suggest forthcoming research trajectories. Our code and models can be found at https://github.com/gersteinlab/Struc-Bench."
 }
 
 @website{gu2024analysts,
@@ -607,23 +730,22 @@ pages = {36339--36348},
 
 %% ===== 第二章文献：多智能体 =====
 
-@website{wu2023autogen,
-  title={{AutoGen}: enabling next-gen {LLM} applications via multi-agent conversation},
-  author={Wu, Qingyun and Bansal, Gagan and Zhang, Jieyu and Wu, Yiran and Li, Beibin and Zhu, Erkang and Jiang, Li and Zhang, Xiaoyun and Zhang, Shaokun and Liu, Jale and others},
-  publisher={arXiv},
-  year={2023},
-  note={[2026-03-24]. arXiv:2308.08155},
-  howpublished={https://arxiv.org/abs/2308.08155}
+@inproceedings{wu2023autogen,
+  author    = {Wu, Qingyun and Bansal, Gagan and Zhang, Jieyu and Wu, Yiran and Li, Beibin and Zhu, Erkang and Jiang, Li and Zhang, Xiaoyun and Zhang, Shaokun and Liu, Jiale and Awadallah, Ahmed H. and White, Ryen and Burger, Doug and Wang, Chi},
+  title     = {AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2024},
+  url       = {https://iclr.cc/virtual/2024/22153}
 }
 
-@website{hong2024metagpt,
-  title={{MetaGPT}: meta programming for a multi-agent collaborative framework},
-  author={Hong, Sirui and Zhuge, Mingchen and Chen, Jonathan and Zheng, Xiawu and Cheng, Yuheng and Zhang, Ceyao and Wang, Jinlin and Wang, Zili and Yau, Steven Ka Zhong and Lin, Zijuan and others},
-  publisher={arXiv},
-  year={2024},
-  note={[2026-03-24]. arXiv:2308.00352},
-  howpublished={https://arxiv.org/abs/2308.00352}
+@inproceedings{hong2024metagpt,
+  author    = {Hong, Sirui and Zhuge, Mingchen and Chen, Jonathan and Zheng, Xiawu and Cheng, Yuheng and Wang, Jinlin and Zhang, Ceyao and Wang, Zili and Yau, Steven and Lin, Zijuan and Zhou, Liyang and Ran, Chenyu and Xiao, Lingfeng and Wu, Chenglin and Schmidhuber, J{\"u}rgen},
+  title     = {MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2024},
+  url       = {https://iclr.cc/virtual/2024/oral/19756}
 }
+
 
 @inproceedings{li2023camel,
   title={{CAMEL}: communicative agents for ``mind'' exploration of large language model society},
@@ -794,6 +916,7 @@ pages = {36339--36348},
   number={9},
   year={2021},
   doi={10.16582/j.cnki.dzzw.2021.09.004},
+  pages = {37--46},
   language={zh}
 }
 
@@ -817,14 +940,26 @@ pages = {36339--36348},
   language={zh}
 }
 
-@website{kim2024text2sql_survey,
-  title={A survey on employing large language models for text-to-{SQL} tasks},
-  author={Kim, Liang and others},
-  publisher={arXiv},
-  year={2024},
-  note={[2026-03-24]. arXiv:2407.15186},
-  howpublished={https://arxiv.org/abs/2407.15186}
+@article{kim2024text2sql_survey,
+author = {Shi, Liang and Tang, Zhengju and Zhang, Nan and Zhang, Xiaotong and Yang, Zhi},
+title = {A Survey on Employing Large Language Models for Text-to-SQL Tasks},
+year = {2025},
+issue_date = {January 2026},
+address = {New York, NY, USA},
+volume = {58},
+number = {2},
+issn = {0360-0300},
+url = {https://doi.org/10.1145/3737873},
+doi = {10.1145/3737873},
+abstract = {With the development of the Large Language Models (LLMs), a large range of LLM-based Text-to-SQL(Text2SQL) methods have emerged. This survey provides a comprehensive review of LLM-based Text2SQL studies. We first enumerate classic benchmarks and evaluation metrics. For the two mainstream methods, prompt engineering and finetuning, we introduce a comprehensive taxonomy and offer practical insights into each subcategory. We present an overall analysis of the above methods and various models evaluated on well-known datasets and extract some characteristics. Finally, we discuss the challenges and future directions in this field.},
+journal = {ACM Comput. Surv.},
+month = sep,
+articleno = {54},
+numpages = {37},
+pages = {1--37},
+keywords = {Large language models, Text-to-SQL, prompt engineering, fine-tuning}
 }
+
 
 %% ===== 学位论文 =====
 
@@ -834,7 +969,7 @@ pages = {36339--36348},
   year={2025},
   school={中国科学技术大学},
   address={合肥},
-  pages={1-82},
+  pages={1-80},
   language={zh}
 }
 
@@ -854,7 +989,7 @@ pages = {36339--36348},
   year={2025},
   school={佛山大学},
   address={佛山},
-  pages={1-68},
+  pages={1-96},
   language={zh}
 }
 
@@ -864,6 +999,6 @@ pages = {36339--36348},
   year={2025},
   school={电子科技大学},
   address={成都},
-  pages={1-85},
+  pages={1-113},
   language={zh}
 }
