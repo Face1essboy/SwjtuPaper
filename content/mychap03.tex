@@ -332,13 +332,13 @@ M-Schema在此基础上补充了中文列描述和示例值，但仍无法表达
 
 \section{异构候选生成}\label{subsec:candidate_generation}
 
-在政务数据查询场景中，用户查询的复杂度分布呈现显著的长尾特征\cite{needapaper}，即高频需求往往是结构相对固定的标准查询，而低频需求可能涉及多层嵌套、多表关联和复杂聚合等高难度SQL结构。
+在政务数据查询场景中，用户查询的复杂度分布呈现显著的长尾特征\cite{liu2025bird}，即高频需求往往是结构相对固定的标准查询，而低频需求可能涉及多层嵌套、多表关联和复杂聚合等高难度SQL结构。
 单一的生成路径在处理这种高度异构的查询分布时存在固有局限：对于简单查询，过度复杂的推理策略会引入冗余步骤并增加出错风险；
 对于复杂查询，直接映射式的生成方式又难以捕获深层的逻辑关系\cite{pourreza2024chase}。
 
 为此，本文设计了一种异构协同生成框架，包含旨在捕获高频业务逻辑的逻辑映射生成器以及处理复杂推理深度的渐进分治生成器。
 通过并行驱动两个推理范式截然不同的生成器，构建多样化的SQL候选池，以提升系统对各种复杂度查询的覆盖能力。
-生成阶段允许大语言模型在非零温度\cite{needtemplateapaper}设置下执行随机采样，每个生成器并行生成$n_c$个候选SQL查询，最终总计产生$2n_c$个多样性的SQL候选集。
+生成阶段允许大语言模型在非零温度\cite{brown2020gpt3}设置下执行随机采样，每个生成器并行生成$n_c$个候选SQL查询，最终总计产生$2n_c$个多样性的SQL候选集。
 
 \subsection{逻辑映射生成器}
 
@@ -505,7 +505,7 @@ T_{ij}=(Q_u,H_u,c_i,c_j,S^{*}_{ij},y_{ij}),
 
 \subsection{判别模型训练}
 
-系统以Qwen-8B为基础模型构建选择智能体$\text{Agent}_s$，并采用指令式监督微调方式\cite{isft2024placeholder}(Instruction Supervised Fine-Tuning,ISFT)进行训练。
+系统以Qwen-8B为基础模型构建选择智能体$\text{Agent}_s$，并采用指令式监督微调方式\cite{ouyang2022instructgpt}(Instruction Supervised Fine-Tuning,ISFT)进行训练。
 对于每个训练样本$T_{ij}$，系统将用户问题$Q_u$、辅助提示信息$H_u$、模式并集$S^{*}_{ij}$以及候选SQL$(c_i,c_j)$按统一模板组织为输入序列，要求模型输出二元判别结果，以表示两者中哪一个更可能为正确查询。由此，$\text{Agent}_s$学习的是如下条件偏好概率：
 \begin{equation}
 p_{\theta}(y_{ij}=1 \mid Q_u,H_u,S^{*}_{ij},c_i,c_j),

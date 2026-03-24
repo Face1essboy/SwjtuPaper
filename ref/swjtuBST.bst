@@ -1030,6 +1030,13 @@ FUNCTION {add.M} %%%alanxu-5-21
   if$
 }
 
+FUNCTION {add.R}
+{ duplicate$ empty$
+    'skip$
+    { " [R]" * }
+  if$
+}
+
 % V3.0 new
 FUNCTION {add.EBOL}
 { duplicate$ empty$
@@ -1304,9 +1311,10 @@ FUNCTION {website}
  format.title "title" output.check
  add.EBOL
  new.sentence
- format.howpublished output
+ format.publisher.address output
  format.date output
  format.note output
+ format.howpublished output
  fin.entry
  empty.misc.check
 }
@@ -1379,10 +1387,11 @@ FUNCTION {techreport}
   new.sentence
   format.title
   "title" output.check
+  add.R
   new.sentence
-  format.tr.number output.nonnull
-  institution "institution" bibinfo.warn output
   address "address" bibinfo.check output
+  add.colon
+  institution "institution" bibinfo.warn output
   format.date "year" output.check
   format.note output
   fin.entry
