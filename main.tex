@@ -14,6 +14,7 @@
 \input{setup/info}				% 加载论文信息
 \input{setup/type}    			% 区分硕博类型（模板自动区分，在info.tex中进行设置）
 \input{setup/package}			% 加载使用宏包
+\usepackage{pdfpages}			% 用于插入外部PDF页面
 
 % 调整浮动体与文字间距
 \setlength{\textfloatsep}{10pt}
@@ -85,7 +86,8 @@
 % 论文附录（包括致谢、参考文献、证明、工作列表）
 
 % 加载致谢文件
-\include{appendix/remerciement}
+% \include{appendix/remerciement}
+
 % \cleardoublepage
 
 % 加载参考文献
@@ -106,6 +108,7 @@
 % 加载附录文件和个人工作列表
 % \include{appendix/appA}					% 非必要章节，主要用以放置测试数据、数学证明或者个人简介
 % \cleardoublepage
-\include{appendix/myWork}					% 攻读硕（博）士论文攻读期间取得的科研成果，论文、专利等
+% \include{appendix/myWork}					% 攻读硕（博）士论文攻读期间取得的科研成果，论文、专利等
+\includepdf[pages=-]{figures/研究成果.pdf}	% 盲审版：直接插入研究成果PDF
 
 \end{document}

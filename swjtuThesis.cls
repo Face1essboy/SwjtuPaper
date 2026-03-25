@@ -414,7 +414,7 @@
 
 % 英文摘要
 \newcommand{\eabstract}[2]{
-    \baseabstract{\bf Abstract}{ABSTRACT}{\bf Keywords: }{#1}{#2}
+    \baseabstract{\bf ABSTRACT}{ABSTRACT}{\bf Keywords: }{#1}{#2}
 }
 
 %-------------------------------------------------------------------------------
