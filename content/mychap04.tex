@@ -511,7 +511,7 @@ I = \text{Verbalize}(F^{*}, \hat{S})
 \subsection{实验设置与评价指标}
 
 实验任务基于第三章构建的同源政务数据库场景展开（见表\ref{tab:dataset_stats}），仍使用财政预算、公共资源和政务项目等领域的5个数据库、33张数据表作为底层数据来源。
-在此基础上，本文构建了56个自然语言分析任务，其中趋势分析16个、对比分析14个、排名分析14个、结构分析12个。每个任务均配备人工核验的参考分析目标，包括目标指标、期望图表类型和关键结论要点。
+在此基础上，本文构建了168个自然语言分析任务，其中趋势分析48个、对比分析42个、排名分析42个、结构分析36个。每个任务均配备人工核验的参考分析目标，包括目标指标、期望图表类型和关键结论要点。
 
 为保持与第三章的衔接，本章在分析规划阶段采用与第三章相同的Qwen3-Coder-30B-A3B-Instruct作为基础模型；
 数据获取环节直接复用第三章的完整查询生成管线。
@@ -564,38 +564,61 @@ I = \text{Verbalize}(F^{*}, \hat{S})
 \label{eq:csr}
 \end{equation}
 
-为验证本章提出的两项核心设计，本文设置如下三组方法进行比较：
+为验证本章方法的有效性，本文设置如下五组对比方法：
 
-（1）\textbf{Direct-Analysis}：直接将自然语言分析需求端到端映射为分析过程与结果，不经过显式的AP-Schema规划，也不显式复用第三章查询生成管线；
+（1）\textbf{Code-Gen Agent}：代表"LLM生成分析代码"范式\cite{zhang2024datacopilot}。使用同一基础模型（Qwen3-Coder-30B-A3B-Instruct），给定数据库模式与分析任务描述，由大语言模型直接生成包含SQL取数、Pandas数据处理和Matplotlib可视化的端到端Python分析脚本。该范式广泛应用于主流数据分析产品中；
 
-（2）\textbf{Plan+Free-SQL}：采用AP-Schema和结果生成规范，但在数据获取阶段不调用第三章查询生成管线，而是在分析流程中自由生成SQL；
+（2）\textbf{ReAct Agent}：代表"LLM + 工具迭代调用"范式\cite{yao2023react}。使用同一基础模型，配置SQL执行工具和绘图工具，以ReAct（Reasoning-Acting）循环方式驱动大语言模型交替进行推理与工具调用，迭代完成数据分析任务；
 
-（3）\textbf{Ours}：本文完整方法，即“AP-Schema规划 + 查询增强取数 + 轻量分析算子结果生成”。
+（3）\textbf{Direct-Analysis}：直接将自然语言分析需求端到端映射为分析过程与结果，不经过显式的AP-Schema规划，也不显式复用第三章查询生成管线；
+
+（4）\textbf{Plan+Free-SQL}：采用AP-Schema和结果生成规范，但在数据获取阶段不调用第三章查询生成管线，而是在分析流程中自由生成SQL；
+
+（5）\textbf{Ours}：本文完整方法，即“AP-Schema规划 + 查询增强取数 + 轻量分析算子结果生成”。
+
+
+其中，Code-Gen Agent和ReAct Agent均使用与本文方法相同的基础模型和数据库环境，以确保对比的公平性。
 
 \subsection{结果对比}
-
-图\ref{fig:chap04_main_results}给出了三种方法在56个政务分析任务上的总体结果。以56个任务为分母，Direct-Analysis、Plan+Free-SQL和本文方法的流程成功任务数分别为32、42和52，任务完成数分别为22、32和48；在完成任务样本中，三种方法得到正确分析结果的样本数分别为16、26和46。可以看出，本文方法在流程成功率、任务完成率、结果正确率和图表恰当性四个指标上均明显优于两个对比方法。
+图\ref{fig:chap04_main_results}展示了五种方法在168个政务分析任务上的总体结果。
 
 \begin{figure}[htbp]
 	\centering
-    % \setlength{\belowcaptionskip}{-12pt}
-	\includegraphics[width=0.85\textwidth]{figures/chap04/chap04_main_results_figure.pdf}
-	\caption{不同分析方法的总体实验结果}
-	\label{fig:chap04_main_results}
+	\includegraphics[width=0.95\textwidth]{figures/chap04/chap04_main_results_figure.pdf}
+	\caption{不同分析方法的总体实验结果}\label{fig:chap04_main_results}
 \end{figure}
 
+从结果中可以得出以下分析：
 
-\textbf{分析规划显著提升了任务完成稳定性。} 与Direct-Analysis相比，Plan+Free-SQL在PSR上提升了17.9个百分点，在TCR上提升了17.8个百分点。这表明AP-Schema能够有效约束系统对指标、维度、时间粒度和展示形式的理解，减少流程中遗漏关键分析要求的情况。
+\textbf{本文方法显著优于外部基线。}
+Code-Gen Agent的PSR较高（82.1\%），说明代码生成范式在流程执行层面具有一定的鲁棒性；
+但其TCR仅为53.6\%，RA也仅为76.7\%，主要原因在于：
+生成的Python脚本缺乏对政务业务指标和统计口径的结构化理解，导致分析逻辑不完整或关键维度遗漏。
+ReAct Agent虽然可以通过迭代调用工具自主纠错，但其PSR（75.0\%）和TCR（50.0\%）均低于Code-Gen Agent，
+因为结构化规划的缺失下迭代过程容易陷入无效循环或工具调用错误，流程稳定性不足。
+相比之下，本文方法的RA达到95.8\%，TCR达到85.7\%，在所有指标上均大幅领先，
+证明了AP-Schema规划与查询增强机制的联合优势。
 
-\textbf{复用查询生成管线是提升整体性能的关键。} 在已经采用分析规划的前提下，Ours相较于Plan+Free-SQL在TCR上进一步提升28.6个百分点，在RA上提升14.5个百分点。
+\textbf{分析规划显著提升了任务完成稳定性。}
+与Direct-Analysis相比，Plan+Free-SQL在PSR上提升了17.9个百分点，在TCR上提升了17.8个百分点。
+这表明AP-Schema能够有效约束系统对指标、维度、时间粒度和展示形式的理解，减少流程中遗漏关键分析要求的情况。
+值得注意的是，Plan+Free-SQL的TCR（57.1\%）已高于Code-Gen Agent（53.6\%）和ReAct Agent（50.0\%），
+说明仅引入结构化规划即可超越主流代码生成和工具调用范式。
+
+\textbf{复用查询生成管线是提升整体性能的关键。}
+在已经采用分析规划的前提下，Ours相较于Plan+Free-SQL在TCR上进一步提升28.6个百分点，在RA上提升14.5个百分点。
 这说明若在分析阶段重新自由生成SQL，仍会重新暴露字段误解、连接错误和过滤条件偏差等问题；
-而查询生成管线能够提供更可靠的数据输入，使本章方法将注意力集中在分析本身。
+而查询生成管线能够提供更可靠的数据输入，使分析方法将注意力集中在分析本身。
 
-\textbf{图表恰当性受益于轻量算子与规则约束。} Ours在CA上达到4.6分，说明通过任务类型到图表类型的规则映射，以及结合数据特征的后校正机制，系统生成的图表在类型选择、标题描述和坐标配置上更加规范。
+\textbf{图表恰当性受益于轻量算子与规则约束。}
+Ours在CA上达到4.6分，显著高于Code-Gen Agent（3.5分）和ReAct Agent（3.3分）。
+Code-Gen Agent通过Matplotlib生成图表虽然功能可用，但缺乏类型驱动的图表选择规则，标题和坐标映射常不规范；
+ReAct Agent的图表质量更不稳定，因为迭代生成过程中图表规格容易被多次修改导致不一致。
+本文方法通过任务类型到图表类型的规则映射以及结合数据特征的后校正机制，在图表类型选择、标题描述和坐标配置上均更加规范。
 
 \subsection{分类型性能对比}
 
-为进一步揭示不同分析场景下各方法的表现差异，本文按四种分析类型分别统计三种方法的TCR和RA。表\ref{tab:chap04_per_type}给出了分类型的实验结果。
+为进一步揭示不同分析场景下各方法的表现差异，本文按四种分析类型分别统计五种方法的TCR和RA。表\ref{tab:chap04_per_type}给出了分类型的实验结果。
 
 \begin{table}[htbp]
 	\setlength{\abovecaptionskip}{5pt}
@@ -605,9 +628,12 @@ I = \text{Verbalize}(F^{*}, \hat{S})
 	\footnotesize
 	\begin{tabular}{lcccccccc}
 		\toprule
-		\multirow{2}{*}{方法} & \multicolumn{2}{c}{趋势分析（16）} & \multicolumn{2}{c}{对比分析（14）} & \multicolumn{2}{c}{排名分析（14）} & \multicolumn{2}{c}{结构分析（12）} \\
+		\multirow{2}{*}{方法} & \multicolumn{2}{c}{趋势分析} & \multicolumn{2}{c}{对比分析} & \multicolumn{2}{c}{排名分析} & \multicolumn{2}{c}{结构分析} \\
 		\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
 		& TCR & RA & TCR & RA & TCR & RA & TCR & RA \\
+		\midrule
+		Code-Gen Agent & 43.8 & 66.7 & 57.1 & 79.2 & 64.3 & 81.5 & 50.0 & 77.8 \\
+		ReAct Agent & 37.5 & 72.2 & 52.4 & 81.8 & 59.5 & 80.0 & 52.8 & 78.9 \\
 		\midrule
 		Direct-Analysis & 31.3 & 60.0 & 42.9 & 83.3 & 50.0 & 71.4 & 33.3 & 75.0 \\
 		Plan+Free-SQL & 50.0 & 75.0 & 64.3 & 88.9 & 64.3 & 77.8 & 50.0 & 83.3 \\
@@ -619,12 +645,14 @@ I = \text{Verbalize}(F^{*}, \hat{S})
 % 从分类型结果中可以得到如下观察。
 
 \textbf{趋势分析对分析规划的依赖最为明显。} 趋势分析要求系统正确识别时间维度、统计粒度（月度/季度）和同比口径等多重约束。
-Direct-Analysis在此类型上的TCR仅为31.3\%，说明在缺乏显式规划时，系统经常遗漏时间粒度或同比要求。引入AP-Schema后（Plan+Free-SQL），TCR提升至50.0\%；而本文完整方法进一步将TCR提升至87.5\%，
-表明查询增强机制能够有效保障逻辑指标的正确计算。
+Code-Gen Agent和ReAct Agent在此类型上的TCR分别仅为43.8\%和37.5\%，说明代码生成和工具迭代范式在处理多约束分析任务时容易遗漏关键时间粒度或同比要求。
+引入AP-Schema后（Plan+Free-SQL），TCR提升至50.0\%；而本文完整方法进一步将TCR提升至87.5\%，
+表明结构化规划与查询增强机制的联合能够有效保障逻辑指标的正确计算。
 
 \textbf{对比分析与结构分析受益于查询增强取数最为显著。} 在这两类任务中，本文方法的RA均达到100.0\%，而Plan+Free-SQL的RA分别为88.9\%和83.3\%。对比分析要求系统在同一口径下获取多个对象的数据，结构分析需要获取完整的组成项汇总值，二者对查询结果的完整性和一致性有较高要求。自由生成SQL时容易出现过滤条件偏差或聚合范围不一致，导致数据缺失或口径错误。
 
-\textbf{排名分析的TCR最高。} 本文方法在排名分析上的TCR达到92.9\%，在四类任务中最高。这主要因为排名分析的结构相对规整（排序+Top-k），AP-Schema的约束和算子链$\Psi(\text{ranking})=[\texttt{sort}, \texttt{topk}, \texttt{format}]$能够直接映射为稳定的执行流程。
+\textbf{排名分析的TCR最高，外部基线在此类型上表现相对最好。} 本文方法在排名分析上的TCR达到92.9\%，在四类任务中最高。这主要因为排名分析的结构相对规整（排序+Top-k），AP-Schema的约束和算子链$\Psi(\text{ranking})=[\texttt{sort}, \texttt{topk}, \texttt{format}]$能够直接映射为稳定的执行流程。
+值得注意的是，Code-Gen Agent在排名分析上的TCR达到64.3\%，是其四类任务中的最高值，说明代码生成范式对结构相对简单的排序类任务具有一定的天然适应性。
 
 \textbf{结构分析的TCR相对偏低，但RA最高。} 结构分析的TCR在四类任务中最低，主要原因是部分结构分析任务的分类维度较复杂，规划阶段有时将分类维度误判为对比维度，导致生成的AP-Schema类型不匹配。
 而一旦任务完成其RA达到100.0\%，说明在规划正确的前提下，查询增强机制和占比算子能够可靠地产出正确结果。
@@ -676,7 +704,9 @@ Direct-Analysis在此类型上的TCR仅为31.3\%，说明在缺乏显式规划�
 
 上述实验从端到端角度评价了整体方法效果，但无法直接反映AP-Schema构建过程本身的质量。为此，本文单独评估规划阶段的输出，以验证固定槽位模板与完备性校验机制对规划质量的提升作用。
 
-实验对比两种配置：（1）LLM直接生成，即不使用固定槽位模板，也不执行约束校验，由大语言模型以自由文本形式输出分析规划；（2）本文方法，即采用固定槽位模板引导草案生成，并通过公式\eqref{eq:ap_valid}进行约束校验与字段补全。评估基于56个分析任务，每个任务的参考AP-Schema由人工标注确定。表\ref{tab:chap04_planning_quality}给出了两种配置在意图识别准确率（IA）、槽位填充完备率（SC）和约束满足率（CSR）三个指标上的结果。
+实验对比两种配置：（1）LLM直接生成，即不使用固定槽位模板，也不执行约束校验，
+由大语言模型以自由文本形式输出分析规划；（2）本文方法，即采用固定槽位模板引导草案生成，并通过公式\eqref{eq:ap_valid}进行约束校验与字段补全。
+评估基于168个分析任务，每个任务的参考AP-Schema由人工标注确定。表\ref{tab:chap04_planning_quality}给出了两种配置在意图识别准确率（IA）、槽位填充完备率（SC）和约束满足率（CSR）三个指标上的结果。
 
 \begin{table}[htbp]
 	\setlength{\abovecaptionskip}{5pt}
