@@ -19,12 +19,12 @@
 (A^*, R^*) = \arg\max_{A \in \mathcal{A}, R \in \mathcal{R}} P(A, R \mid x, S, K, F, G_q, \mathcal{O}_a, \mathcal{V})
 \label{eq:analysis_task_def}
 \end{equation}
-其中，$\mathcal{A}$表示候选分析规划集合，$\mathcal{R}$表示候选结果集合。为支撑上层应用展示与后续系统实现，本章将输出统一组织为
+其中，$\mathcal{A}$表示候选分析规划集合，$\mathcal{R}$表示候选结果集合。为支撑上层应用展示与后续系统实现，本章将输出统一组织为：
 \begin{equation}
 \text{ResultPackage} = \{\texttt{charts}, \texttt{tables}, \texttt{insights}, \texttt{logs}\}
 \label{eq:result_package}
 \end{equation}
-其中$\texttt{charts}$表示图表文件或图表描述集合，$\texttt{tables}$表示结构化分析表格结果，$\texttt{insights}$表示文字洞察摘要，$\texttt{logs}$表示执行状态与异常信息。
+其中，$\texttt{charts}$表示图表文件或图表描述集合，$\texttt{tables}$表示结构化分析表格结果，$\texttt{insights}$表示文字洞察摘要，$\texttt{logs}$表示执行状态与异常信息。
 
 结合政务场景中的高频需求，本章将目标任务限定为四类典型分析类型，各类型的核心逻辑与适用场景如表\ref{tab:analysis_types}所示。
 
@@ -35,7 +35,7 @@
 	\caption{四类典型分析类型及其适用场景}\label{tab:analysis_types}
 	\centering
 	\footnotesize
-    \renewcommand{\arraystretch}{1.4}
+    \renewcommand{\arraystretch}{1.2}
 	\begin{tabular}{p{1.5cm}p{4.5cm}p{6.5cm}}
 		\toprule
 		分析类型 & 核心逻辑 & 适用场景 \\
@@ -48,7 +48,7 @@
 	\end{tabular}
 \end{table}
 
-与查询任务相比，面向分析的结果生成面临三类挑战。
+与第一章归纳的政务领域数据主要特征相对应，政务数据分析不仅面对一般的数据处理问题，还直接受到多维层级组织、统计口径隐含以及结果规范化要求等约束。与查询任务相比，面向分析的结果生成面临三类挑战。
 其一，分析需求通常隐含指标、维度、时间粒度、统计口径和展示形式等多重约束，若缺乏中间规划过程，系统容易遗漏关键分析步骤；
 其二，若分析环节重新承担数据库理解与SQL生成任务，则会再次暴露Schema歧义、字段映射错误和逻辑幻觉等问题；
 其三，分析结果不仅要正确，还要展示规范，因此需要在方法层面形成统一的结果组织方式，而具体的服务部署等工程实现将在系统实现章节展开。
@@ -159,7 +159,7 @@ T \in \{\text{trend}, \text{comparison}, \text{ranking}, \text{structural}\}
 		查询层操作 & $O_q$ & 取数阶段的口径与关联操作 & 同比口径、跨表关联 \\
 		分析层操作 & $O_a$ & 结果上的展示与整理操作 & \texttt{sort}$\to$\texttt{topk}$\to$\texttt{annotate} \\
 		可视化规格 & $\hat{V}$ & 图表类型与坐标映射要求 & 折线图、柱状图、饼图 \\
-		摘要要求 & $\hat{S}$ & 文字洞察需覆盖的要点 & 峰值月份、占比前三、最大增幅 \\
+		摘要要求 & $\hat{S}$ & 文字洞察需覆盖的要点 & 峰值月份、占比前三等 \\
 		\bottomrule
 	\end{tabular}
 	\renewcommand{\arraystretch}{1.0}
@@ -299,13 +299,12 @@ AP-Schema的完整生成流程如算法\ref{alg:analysis_planning}所示。
 具体而言，本节依次说明查询需求投影与分析需求投影的定义（\ref{subsec:task_partition}节）、操作归属的判定准则与执行流程（\ref{subsec:decompose_rule}节），以及查询层输出的标准结果表示（\ref{subsec:result_interface}节）。
 
 \subsection{查询层与分析层的任务划分}\label{subsec:task_partition}
-
-
-据\cite{gu2024analysts}研究发现以及实践表明，若查询与分析耦合职能划分不明确，则会出现逻辑幻觉重复计算等问题。故本章采用如下划分原则：涉及统计口径、复杂关联或底层数据库计算逻辑的操作，交由第三章查询生成管线完成；
+研究与实践表明，若查询与分析耦合、职能划分不明确，则容易出现逻辑幻觉、重复计算等问题。对政务领域数据而言，由于统计口径隐含性强、维度层级复杂且结果需要可复核，凡是涉及口径改变、复杂关联或底层数据库计算逻辑的操作，都不宜留在分析层自由处理。故本章采用如下划分原则：涉及统计口径、复杂关联或底层数据库计算逻辑的操作，交由第三章查询生成管线完成；
 本章分析层执行作用于查询结果组织、展示与解释的操作。
 查询生成在给定用户问题$Q$、数据库模式$S$、领域知识库$K$和动态样例库$F$的条件下完成模式链接、候选生成与候选判别；本章则不直接展开SQL，而是将与取数相关的约束显式化后交由查询层求解。
 
 为此，本文从AP-Schema中分别定义查询需求投影函数与分析需求投影函数：
+\vspace{-4pt}
 \begin{equation}
     \begin{cases}
         Q_A = \pi_q(A) = \langle M, D, \hat{F}, G, O_q \rangle \\
@@ -328,7 +327,7 @@ $P_A$表示分析层操作链（$O_a$）、可视化规格（$\hat{V}$）和摘�
 \begin{figure}[htbp]
 	\centering
     \setlength{\belowcaptionskip}{-12pt}
-	\includegraphics[width=0.95\textwidth]{figures/chap04/查询层与分析层任务划分执行流程图.pdf}
+	\includegraphics[width=0.75\textwidth]{figures/chap04/查询层与分析层任务划分执行流程图.pdf}
 	\caption{查询层与分析层任务划分执行流程图}\label{fig:chap04_partition_framework}
 \end{figure}
 
@@ -393,19 +392,20 @@ $\sigma \in \{\text{success}, \text{failure}\}$表示查询执行状态。
 \begin{figure}[htbp]
 	\centering
 	% \setlength{\belowcaptionskip}{-16pt}
-	\includegraphics[width=0.77\textwidth, trim=0 180bp 60bp 0, clip]{figures/chap04/层间衔接流程图.pdf}
+	\includegraphics[width=0.7\textwidth, trim=0 180bp 60bp 0, clip]{figures/chap04/层间衔接流程图.pdf}
 	\caption{层间衔接流程图}
     \label{fig:chap04_decision_flow}
 \end{figure}
 
-
+\vspace{-5pt}
 \section{基于分析算子的结果生成方法}
 在查询层返回结果表示$\mathcal{D}$后，系统需要将结构化数据进一步转化为图表、表格和文字洞察。
 本节首先说明分析算子的设计与编排机制，随后给出结果生成流程与输出组织方式。
 
 \subsection{分析算子设计与编排}\label{subsec:operator_orchestration}
 
-为保持分析层的可控性，本文引入面向结果组织的轻量分析算子库
+为保持分析层的可控性，本文引入面向结果组织的轻量分析算子库。
+这样的设计既是为了限制分析层对业务指标的二次改写，也是为了满足政务场景下对结果表达规范性和过程可复核性的要求。
 \begin{equation}
 \mathcal{O}_a = \{\texttt{sort}, \texttt{topk}, \texttt{share}, \texttt{pivot}, \texttt{annotate}, \texttt{format}\}
 \label{eq:operator_library}
@@ -498,7 +498,7 @@ I = \text{Verbalize}(F^{*}, \hat{S})
 第三，文字洞察生成采用公式\eqref{eq:insight_pipeline}所示的“事实抽取优先”策略，先从结果表中提取峰值、增幅、Top-k和占比等结构化事实，再在摘要要求$\hat{S}$的约束下组织文本，以降低自由生成导致的结论漂移。
 第四，可视化规格修正依据公式\eqref{eq:vis_rule}，在真实类别数$n_{\text{cat}}$等数据特征的基础上对初始图表类型进行后校正，避免仅凭自然语言需求过早决定图表类型所带来的偏差。
 
-经过上述流程，系统最终输出的结果包$R$满足公式\eqref{eq:result_package}所定义的统一结构，为第五章的系统实现提供了标准化的方法输出接口。
+经过上述流程，系统最终输出的结果包$R$满足公式\eqref{eq:result_package}所定义的统一结构，为第五章的系统实现提供了标准化的方法输出接口。由此，第四章的方法设计与政务领域数据的多维组织性、口径敏感性以及规范化和可追溯性要求形成了直接对应关系。
 
 
 
@@ -510,7 +510,7 @@ I = \text{Verbalize}(F^{*}, \hat{S})
 
 \subsection{实验设置与评价指标}
 
-实验任务基于第三章构建的同源政务数据库场景展开（见表\ref{tab:dataset_stats}），仍使用财政预算、公共资源和政务项目等领域的5个数据库、33张数据表作为底层数据来源。
+实验任务基于第三章构建的同源政务数据库场景展开（见表\ref{tab:dataset_stats}），仍使用财政预算、公共资源和政务项目等领域作为底层数据来源。用于验证分析规划与结果生成方法在同源数据环境下的有效性。
 在此基础上，本文构建了168个自然语言分析任务，其中趋势分析48个、对比分析42个、排名分析42个、结构分析36个。每个任务均配备人工核验的参考分析目标，包括目标指标、期望图表类型和关键结论要点。
 
 为保持与第三章的衔接，本章在分析规划阶段采用与第三章相同的Qwen3-Coder-30B-A3B-Instruct作为基础模型；
@@ -700,13 +700,14 @@ Code-Gen Agent和ReAct Agent在此类型上的TCR分别仅为43.8\%和37.5\%，�
 去除后，TCR下降至82.1\%，CA从4.6分下降至4.0分，RA也略降至93.5\%。
 自由摘要模式下，系统偶尔在洞察中引入结果表中不存在的数值（如编造排名位次或增幅百分比），导致标注者判定为任务未完成或结果不正确。这表明“先抽取事实、再组织文本”的约束策略能有效抑制大语言模型在摘要生成中的结论漂移。
 
+% \vspace{-1pt}
 \subsection{AP-Schema规划质量评估}
 
 上述实验从端到端角度评价了整体方法效果，但无法直接反映AP-Schema构建过程本身的质量。为此，本文单独评估规划阶段的输出，以验证固定槽位模板与完备性校验机制对规划质量的提升作用。
 
 实验对比两种配置：（1）LLM直接生成，即不使用固定槽位模板，也不执行约束校验，
-由大语言模型以自由文本形式输出分析规划；（2）本文方法，即采用固定槽位模板引导草案生成，并通过公式\eqref{eq:ap_valid}进行约束校验与字段补全。
-评估基于168个分析任务，每个任务的参考AP-Schema由人工标注确定。表\ref{tab:chap04_planning_quality}给出了两种配置在意图识别准确率（IA）、槽位填充完备率（SC）和约束满足率（CSR）三个指标上的结果。
+由LLM以自由文本形式输出分析规划；（2）本文方法，采用固定槽位模板引导草案生成，并通过公式\eqref{eq:ap_valid}进行约束校验与字段补全。
+评估基于168个分析任务，每个任务的参考AP-Schema由人工标注确定。表\ref{tab:chap04_planning_quality}给出了两种配置在意图识别准确率（IA）、槽位填充完备率（SC）和约束满足率（CSR）上的结果。
 
 \begin{table}[htbp]
 	\setlength{\abovecaptionskip}{5pt}
@@ -812,4 +813,4 @@ Code-Gen Agent和ReAct Agent在此类型上的TCR分别仅为43.8\%和37.5\%，�
 
 \section{本章小结}
 
-本章针对政务智能问数中"查到数据后如何规范分析"的问题，提出了基于分析规划与查询增强的政务数据分析方法。该方法引入AP-Schema将开放式分析需求转化为结构化规划，通过查询增强的任务分解机制复用第三章的可靠取数能力，并借助轻量分析算子库与可视化规则实现规范化的结果生成。实验表明，本文方法在任务完成率、结果正确率和图表恰当性上均显著优于对比方法；分类型对比、细粒度模块消融和规划质量评估三组实验进一步验证了各子模块的独立贡献与设计必要性。由此，第三章解决可靠取数，本章解决规范分析，二者共同为第五章的系统实现提供完整的方法基础。
+本章针对政务智能问数中“查到数据后如何规范分析”的问题，提出了基于分析规划与查询增强的政务数据分析方法。该方法引入AP-Schema将开放式分析需求转化为结构化规划，通过查询增强的任务分解机制复用第三章的可靠取数能力，并借助轻量分析算子库与可视化规则实现规范化的结果生成。整体上看，本章的方法设计对应了政务领域数据多维组织性强、统计口径隐含性强以及结果规范性和可追溯性要求高等特征。实验表明，本文方法在任务完成率、结果正确率和图表恰当性上均显著优于对比方法；分类型对比、细粒度模块消融和规划质量评估三组实验进一步验证了各子模块的独立贡献与设计必要性。由此，第三章解决可靠取数，本章解决规范分析，二者共同为第五章的系统实现提供完整的方法基础。

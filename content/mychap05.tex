@@ -7,6 +7,10 @@
 在第三章和第四章查询与分析方法构建的基础上，本文实现了一个面向政务场景的智能问数系统，并将查询生成方法与分析生成方法整合到统一后端服务之中。
 该系统能够完成从自然语言输入、可靠取数、结构化分析到结果组织与追溯的完整流程。
 
+从研究成果落地关系看，第3章提出的政务数据查询生成方法被封装为系统中的查询服务内核，对应模式检索、领域知识检索、LA-Schema构建、异构候选生成、执行反馈修复和候选判别选择等关键环节；
+第4章提出的政务数据分析方法被封装为系统中的分析服务内核，对应AP-Schema生成、查询增强取数、分析算子编排、图表构建、文字洞察与\texttt{ResultPackage}结果组织等关键环节。
+换言之，第5章并不是独立于前两章重新设计一套系统流程，而是将前序章节形成的“可靠查询+规范分析”方法链条进一步组织为可调用、可展示、可追溯的工程系统。
+
 系统核心能力主要包括：
 \textbf{（1）自然语言问数。} 支持用户以自然语言提交查询类或分析类请求，并由应用层完成统一接入与任务分发；
 \textbf{（2）可靠查询生成。} 复用第三章的LA-Schema增强、异构候选生成、查询修复与候选判别能力，输出高可信度SQL及其结果表；
@@ -32,17 +36,17 @@
 \textbf{智能服务层}是系统的核心执行层。
 本研究采用LangGraph的\texttt{StateGraph}实现服务级编排，并将查询能力与分析能力分别封装为查询子图和分析子图。
 其中，查询服务封装第三章提出的完整查询链路，对外返回\texttt{QueryResponse}；分析服务封装第四章提出的分析规划、查询增强取数和结果生成链路，对外返回\texttt{AnalysisResultResponse}，其结果主体为\texttt{ResultPackage}。
-对于分析请求，系统先在分析子图中生成\texttt{AP-Schema}，再投影得到查询约束，并由查询调用节点复用查询子图完成取数；查询结果返回后，再进入分析算子、图表构建和洞察生成节点完成结果组织。
+具体而言，查询子图内部顺序吸收了第三章的方法成果：先由检索节点汇聚结构元数据、领域知识和动态样例，再构建LA-Schema完成政务术语、逻辑口径和值域约束的增强表示，随后通过逻辑映射生成器与渐进分治生成器形成异构候选，并结合执行反馈修复与候选判别得到最终SQL。与之对应，分析子图则顺序吸收了第四章的方法成果：先生成\texttt{AP-Schema}以显式表达分析对象、指标、维度、筛选条件和展示规格，再通过查询投影节点把其中与数据库理解、统计口径和复杂关联相关的约束下沉到查询子图，待查询结果返回后，再由分析算子、图表构建、事实抽取与文字生成节点组织为标准化\texttt{ResultPackage}。
+对于分析请求，系统先在分析子图中生成\texttt{AP-Schema}，再投影得到查询约束，并由查询调用节点复用查询子图完成取数；查询结果返回后，再进入分析算子、图表构建和洞察生成节点完成结果组织。这一链路使第4章的分析能力并非绕开查询模块独立运行，而是建立在第3章可靠取数能力之上，形成“先查准、再分析”的系统化落地方式。
 在这一层中，本地大模型不直接暴露给前端，而是由HTTP调用器以受约束方式供各节点复用。
 
 \textbf{数据层}为上层服务提供稳定的数据与知识支撑。
 政务业务库保存财政、项目、公共资源等原始业务数据；PostgreSQL保存系统元数据、领域知识库与会话状态；Milvus承载值检索与样例检索向量索引；Redis保存热点缓存、任务热状态和流式事件通道；图表与导出文件则以文件路径方式登记到结果产物表中。
-其中，应用层和智能服务层通过SQLAlchemy统一管理元数据库等核心对象。
+其中，应用层和智能服务层通过SQLAlchemy统一管理元数据库等核心对象。从前序章节成果的承接关系看，\texttt{schema\_*}元数据表、领域知识库$K=\{B,L,V\}$以及Milvus中的值检索与样例检索索引，主要为第3章查询方法中的模式增强、术语映射、逻辑求解和值匹配提供支撑；\texttt{analysis\_task}中的\texttt{ap\_schema}字段、\texttt{result\_artifact}表和\texttt{execution\_log}表，则主要为第4章分析方法中的结构化规划、结果组织与可追溯输出提供持久化承接。
 
 \begin{figure}[htbp]
 	\centering
-    \setlength{\belowcaptionskip}{-12pt}
-	\includegraphics[width=1.0\textwidth,trim=0 120pt 0 0,clip]{figures/chap05/fig5-1_system_architecture.pdf}
+	\includegraphics[width=1.0\textwidth,trim=0 120pt 0 0,clip]{figures/chap05/fig5-1_system_architec.pdf}
 	\vspace{-22pt}
 	\caption{系统总体分层架构图}\label{fig:chap05_architecture}
 \end{figure}
@@ -75,6 +79,7 @@
 % 	% \renewcommand{\arraystretch}{1.0}
 % \end{table}
 
+\vspace{5pt}
 \section{应用层与智能服务层实现}
 
 % 本节从工程实现角度说明查询方法和分析方法如何被组织为可调用服务。具体的智能服务层方法实现已在前序章节详细介绍，故不再赘述。
@@ -96,13 +101,14 @@
 此外，系统提供统一的任务状态查询、结果获取和事件订阅接口，使查询与分析的结果回传共享同一交互范式。
 
 在查询与分析的链路衔接上，分析请求并不会绕过查询服务直接生成图表或结论，而是先由分析规划节点生成\texttt{AP-Schema}，再由查询投影节点提取指标、维度、筛选条件和统计粒度等查询约束，并由查询调用节点复用查询子图。
-查询子图复用第三章中的LA-Schema增强、异构候选生成、查询修复与候选判别流程，返回结果表及执行状态；分析子图再基于该结果完成分析算子执行、图表构建、文字洞察和结果封装，从而生成\texttt{ResultPackage}。
+这一过程实际上对应了第四章与第三章研究成果在系统中的协同落地：\texttt{AP-Schema}负责把开放式分析需求转化为结构化分析规划，明确哪些内容属于分析对象表达、哪些内容属于必须下沉到数据库层求解的查询约束；查询投影节点据此将指标口径、时间粒度、分组维度和复杂筛选等信息映射为查询请求，再调用查询子图执行第3章中的LA-Schema增强、异构候选生成、查询修复与候选判别流程，返回结果表及执行状态；分析子图再基于该结果完成分析算子执行、图表构建、事实抽取、文字洞察和结果封装，从而生成\texttt{ResultPackage}。因此，第5章中的分析服务本质上是把第4章提出的分析规划与算子方法建立在第3章可靠查询链路之上，实现方法层与系统层的一体化衔接。
 
 在异常处理上，应用层通过全局异常拦截器将参数错误、权限异常、任务状态异常等规范化为统一响应结构，并为每个请求生成唯一追踪标识，与任务标识一同贯穿服务层和日志系统，
 为后续错误定位与结果回放提供依据。
 
 \begin{figure}[htbp]
 	\centering
+	\setlength{\belowcaptionskip}{-12pt}
 	\includegraphics[width=0.9\textwidth]{figures/chap05/fig5-4_analysis_sequence.pdf}
 	\caption{同步查询、异步分析与流式回传时序图}\label{fig:chap05_sequence}
 \end{figure}
@@ -122,7 +128,7 @@
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.9\textwidth]{figures/chap05/fig5-7_exception_trace.pdf}
+	\includegraphics[width=0.8\textwidth]{figures/chap05/fig5-7_exception_trace.pdf}
 	\caption{异常处理与结果回传实现图}\label{fig:chap05_exception}
 \end{figure}
 
@@ -158,6 +164,7 @@
 经过上述过程后，系统在PostgreSQL中形成\texttt{data\_source}、\texttt{schema\_table}、\texttt{schema\_column}和\texttt{schema\_relation}等标准元数据表，在Milvus中形成面向值检索与样例检索的向量索引。
 在线查询时，\texttt{schema\_retriever}从\texttt{schema\_*}表中读取与当前问题相关的结构元数据，\texttt{knowledge\_retriever}从领域知识库$K=\{B,L,V\}$中读取术语映射、逻辑公式和值域约束，\texttt{example\_retriever}则基于动态样例库$F$及其向量索引完成相似样例召回。
 三类信息在查询子图中共同用于构建LA-Schema。
+这意味着第3章中的知识准备与模式增强机制，并未停留在方法描述层，而是通过元数据抽取、知识库存储和检索服务在系统中被具体实现：结构元数据对应模式理解基础，$B/L/V$知识对应术语映射、逻辑口径和值域规范，动态样例检索对应候选生成阶段的上下文支撑。
 因此，元数据抽取模块实际上承担了从“外部数据库原始结构”到“可被查询方法使用的统一知识表示”之间的桥梁作用。
 
 \subsection{系统元数据库实现}
@@ -174,6 +181,7 @@
 从结构关系看，源数据侧由\texttt{data\_source}、\texttt{schema\_table}、\texttt{schema\_column}和\texttt{schema\_relation}共同构成统一结构描述；
 会话侧由\texttt{session\_context}、\texttt{query\_task}和\texttt{analysis\_task}共同构成交互过程的状态管理；
 产物侧则由\texttt{result\_artifact}和\texttt{execution\_log}承接任务级结果沉淀与运行留痕。
+其中，\texttt{query\_task}主要承接第3章查询服务的输入问题、最终SQL和执行状态，\texttt{analysis\_task}中的\texttt{ap\_schema}字段则直接承接第4章分析规划的结构化中间表示；\texttt{result\_artifact}保存结果表、图表、洞察文本和导出文件，是\texttt{ResultPackage}的持久化外化形式，\texttt{execution\_log}则保存查询修复、分析执行和结果封装过程中的关键轨迹。
 由于查询任务和分析任务都可能生成多个结果文件和多条日志记录，因此系统将产物和日志分别实现为独立从表，并通过\texttt{task\_type}与\texttt{task\_id}完成关联。
 
 \begin{table}[!t]
@@ -208,7 +216,7 @@
 
 在\textbf{结果管理}方面，系统将查询结果表、图表文件、洞察文本、导出文件统一抽象为结果产物。
 对于查询任务，重点保存\texttt{final\_sql}、结果表摘要和原始结果文件；对于分析任务，重点保存\texttt{ap\_schema}、图表描述、分析表格和\texttt{insights}文本。
-若用户在已有查询结果基础上继续发起分析任务，系统仅在当前分析任务与已有查询结果在指标、维度、筛选条件和统计粒度上兼容时优先复用相应\texttt{result\_artifact}；若不兼容，则由分析服务重新触发查询子图完成取数。
+这一存储方式使第3章与第4章的方法中间产物能够在系统中被持续保留：查询任务保存最终SQL和结果表，用于复核“数据是如何取出的”；分析任务保存\texttt{ap\_schema}、图表和洞察文本，用于复核“分析是如何规划和组织的”。若用户在已有查询结果基础上继续发起分析任务，系统仅在当前分析任务与已有查询结果在指标、维度、筛选条件和统计粒度上兼容时优先复用相应\texttt{result\_artifact}；若不兼容，则由分析服务重新触发查询子图完成取数。
 
 在\textbf{日志管理}方面，\texttt{execution\_log}采用结构化写法，至少记录\texttt{task\_id}、节点名称、执行步骤、状态、日志内容和时间戳。
 与仅保存文本日志不同，结构化日志可以支持按任务、代理或节点维度检索，能够快速定位错误是发生在模式链接、候选判别、分析算子、图表生成还是结果封装环节。
@@ -218,14 +226,13 @@
 第二类是高频相同请求对应的查询结果摘要、分析结果引用以及流式事件缓冲。
 由于政务问数场景并不追求毫秒级实时更新，因此在保证缓存失效策略合理的前提下，引入Redis可以有效降低重复请求对数据库和大模型服务的压力。
 
-
-\section{系统功能实现与效果展示}
-
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.8\textwidth]{figures/chap05/show_mainpage.png}
+	\includegraphics[width=0.9\textwidth]{figures/chap05/show_mainpage.png}
 	\caption{系统对话主页面}\label{fig:chap05_show_mainpage}
 \end{figure}
+
+\section{系统功能实现与效果展示}
 
 基于上述架构、应用层接口和智能服务层实现，本文系统为此展示对应自然语言输入、SQL与结果查看、分析结果展示等内容。
 
@@ -265,7 +272,7 @@
 最终SQL语句和结果表（明细表）。
 结果表区域则为后续人工复核、导出或发起一键分析提供基础。
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 	\centering
 	\includegraphics[width=0.75\textwidth]{figures/chap05/show_query_sql.png}
 	\caption{SQL与查询结果展示}\label{fig:chap05_show_query}
@@ -273,16 +280,17 @@
 
 \textbf{数据结果追溯}。
 如图\ref{fig:show_analysis_datas}。每次查询或者分析任务，都要在主页面的右侧展示使用的数据与知识，方便进行追溯分析。
+这里展示的并非附加性调试信息，而是第3章与第4章方法中间产物在系统界面中的外显：查询任务可回看使用过的结构元数据、领域知识和最终SQL，用于复核LA-Schema增强、候选选择与最终取数依据；分析任务可回看分析规划、查询结果来源、执行轨迹和结果产物，用于复核AP-Schema如何约束后续分析过程以及图表、表格、洞察如何形成。
 
 \begin{figure}[H]
 	\centering
-	\begin{subfigure}[t]{0.4\textwidth}
+	\begin{subfigure}[t]{0.35\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{figures/chap05/show_data1.png}
 		\caption{执行轨迹}
 		% \label{fig:chap05_show_analysis_page}
 	\end{subfigure}
-	\begin{subfigure}[t]{0.3\textwidth}
+	\begin{subfigure}[t]{0.25\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{figures/chap05/show_data2.png}
 		\caption{使用数据与知识}
@@ -299,11 +307,13 @@
 
 系统功能页面并不是独立于方法之外的界面拼装，而是把第三章的查询能力、第四章的分析能力以及第五章的应用层接口、智能服务层编排和结果追溯机制，
 统一组织到一个已经实现的政务智能问数系统中。
+从方法融入关系看，界面中展示的SQL与结果表对应第3章可靠查询链路的输出，分析规划与执行轨迹对应第4章结构化分析链路的中间状态，使用数据与知识的展示则对应查询服务与分析服务实际调用的元数据、领域知识和结果产物。
 用户在界面层面看到的是一次自然的问数与分析过程，而在系统内部则对应着FastAPI接口接入、LangGraph子图编排、Redis事件推送和结构化状态流转的工程实现。
+
 
 
 \section{本章小结}
 
 本章从工程实现角度说明了政务智能问数系统的落地方式。系统采用表示层、应用层、智能服务层和数据层四层架构，由应用层统一接入自然语言请求，并在智能服务层编排查询子图与分析子图，完成同步查询、异步分析以及任务状态与结果的统一管理。
 
-第三章提供可靠取数能力，第四章提供规范分析能力，第五章则将二者组织为一个可交互、可追溯的统一系统：分析请求先形成\texttt{AP-Schema}并投影查询约束，再复用查询子图完成取数，最终生成图表、表格和文字洞察。由此，全文形成了从方法设计到系统实现的完整闭环。
+第三章提供可靠取数能力，第四章提供规范分析能力，第五章则将二者组织为一个可交互、可追溯的统一系统：查询服务承接LA-Schema增强、异构候选生成、查询修复与候选判别等方法成果，分析服务承接AP-Schema构建、查询增强分层、分析算子编排与\texttt{ResultPackage}组织等方法成果；分析请求先形成\texttt{AP-Schema}并投影查询约束，再复用查询子图完成取数，最终生成图表、表格和文字洞察。由此，全文形成了从方法设计到系统实现的完整闭环。

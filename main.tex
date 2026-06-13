@@ -16,6 +16,11 @@
 \input{setup/package}			% 加载使用宏包
 \usepackage{pdfpages}			% 用于插入外部PDF页面
 
+% 调整标题留白（覆盖 swjtuThesis.cls 中的默认设置）
+% 当前将 subsection 与 subsubsection 的上下间距适当收紧，避免小节标题与正文之间留白过大
+% \CTEXsetup[beforeskip = {8pt plus 1pt minus 1pt}, afterskip = {2pt plus 1pt minus 1pt}]{subsection}
+% \CTEXsetup[beforeskip = {8pt plus 1pt minus 1pt}, afterskip = {2pt plus 1pt minus 1pt}]{subsubsection}
+
 % 调整浮动体与文字间距
 \setlength{\textfloatsep}{10pt}
 \setlength{\intextsep}{10pt}
@@ -70,25 +75,25 @@
 % \renewcommand\arraystretch{1.5}
 
 \include{content/mychap01}
-% \cleardoublepage
+\cleardoublepage
 \include{content/mychap02}
-% \cleardoublepage
+\cleardoublepage
 \include{content/mychap03}
-% \cleardoublepage
+\cleardoublepage
 \include{content/mychap04}
-% \cleardoublepage
+\cleardoublepage
 \include{content/mychap05}
-% \cleardoublepage
+\cleardoublepage
 % 加载论文结论
 \include{content/myconclusion}
-% \cleardoublepage
+\cleardoublepage
 %---------------------------------------------------------------------------------
 % 论文附录（包括致谢、参考文献、证明、工作列表）
 
 % 加载致谢文件
-% \include{appendix/remerciement}
+\include{appendix/remerciement}
 
-% \cleardoublepage
+\cleardoublepage
 
 % 加载参考文献
 % 标号变更为左对齐，同时扩大标号与内容间距
@@ -103,12 +108,12 @@
 \addcontentsline{toc}{chapter}{参考文献}
 \bibliographystyle{ref/swjtuBST} %定义参考文献列表格式，参考国标文件GB/T 7714-2015制作
 \bibliography{ref/refEx} %加入参考文献的.bib库，可自行建立替换，refEx为示范文件
-% \cleardoublepage
+\cleardoublepage
 
 % 加载附录文件和个人工作列表
 % \include{appendix/appA}					% 非必要章节，主要用以放置测试数据、数学证明或者个人简介
 % \cleardoublepage
-% \include{appendix/myWork}					% 攻读硕（博）士论文攻读期间取得的科研成果，论文、专利等
-\includepdf[pages=-]{figures/研究成果.pdf}	% 盲审版：直接插入研究成果PDF
+\include{appendix/myWork}					% 攻读硕（博）士论文攻读期间取得的科研成果，论文、专利等
+% \includepdf[pages=-]{figures/研究成果.pdf}	% 盲审版：直接插入研究成果PDF
 
 \end{document}
